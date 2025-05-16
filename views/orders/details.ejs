@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Kommissionier-App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">Kommissionier-App</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/orders">Aufträge</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> <%= user.name %>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <% if (user.role === 'admin') { %>
+                            <li><a class="dropdown-item" href="/auth/register">Benutzer registrieren</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                        <% } %>
+                        <li><a class="dropdown-item" href="/auth/logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Flash-Nachrichten -->
+    <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
+        <div class="alert alert-success alert-dismissible fade show">
+            <%= success_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
+        <div class="alert alert-danger alert-dismissible fade show">
+            <%= error_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2>Lieferschein: <%= order.deliveryNoteNumber %></h2>
+
+            <div>
+                <% if (order.status === 'new') { %>
+                    <span class="badge bg-secondary">Neu</span>
+                <% } else if (order.status === 'in_progress') { %>
+                    <span class="badge bg-warning">In Bearbeitung</span>
+                <% } else if (order.status === 'packed') { %>
+                    <span class="badge bg-info">Verpackt</span>
+                <% } else if (order.status === 'shipped') { %>
+                    <span class="badge bg-primary">Versendet</span>
+                <% } else if (order.status === 'completed') { %>
+                    <span class="badge bg-success">Abgeschlossen</span>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <!-- Linke Spalte: Basis-Informationen -->
+                <div class="col-md-6">
+                    <h4>Allgemeine Informationen</h4>
+                    <table class="table table-striped table-hover">
+                        <tbody>
+                        <tr>
+                            <th style="width: 40%">Lieferschein-Nr.:</th>
+                            <td><%= order.deliveryNoteNumber %></td>
+                        </tr>
+                        <% if (order.orderNumber) { %>
+                            <tr>
+                                <th>Auftrags-Nr.:</th>
+                                <td><%= order.orderNumber %></td>
+                            </tr>
+                        <% } %>
+                        <% if (order.externalDeliveryNoteNumber) { %>
+                            <tr>
+                                <th>Externe Lieferschein-Nr.:</th>
+                                <td><%= order.externalDeliveryNoteNumber %></td>
+                            </tr>
+                        <% } %>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <% if (order.status === 'new') { %>
+                                    <span class="badge bg-secondary">Neu</span>
+                                <% } else if (order.status === 'in_progress') { %>
+                                    <span class="badge bg-warning">In Bearbeitung</span>
+                                <% } else if (order.status === 'packed') { %>
+                                    <span class="badge bg-info">Verpackt</span>
+                                <% } else if (order.status === 'shipped') { %>
+                                    <span class="badge bg-primary">Versendet</span>
+                                <% } else if (order.status === 'completed') { %>
+                                    <span class="badge bg-success">Abgeschlossen</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Erstellt am:</th>
+                            <td><%= order.createdAt ? order.createdAt.toLocaleDateString('de-DE') : 'Nicht verfügbar' %></td>
+                        </tr>
+                        <% if (order.deliveryDate) { %>
+                            <tr>
+                                <th>Lieferdatum:</th>
+                                <td><%= order.deliveryDate.toLocaleDateString('de-DE') %></td>
+                            </tr>
+                        <% } %>
+                        <% if (order.assignedTo) { %>
+                            <tr>
+                                <th>Zugewiesen an:</th>
+                                <td><%= order.assignedTo.name %></td>
+                            </tr>
+                        <% } %>
+                        <% if (order.project && order.project.name) { %>
+                            <tr>
+                                <th>Projekt:</th>
+                                <td><%= order.project.name %></td>
+                            </tr>
+                        <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Rechte Spalte: Kundeninformationen -->
+                <div class="col-md-6">
+                    <h4>Kundeninformationen</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <% if (order.customer) { %>
+                                <p class="mb-1"><strong><%= order.customer.name || 'Kein Name' %></strong></p>
+                                <% if (order.customer.name2) { %><p class="mb-1"><%= order.customer.name2 %></p><% } %>
+                                <% if (order.customer.department) { %><p class="mb-1"><%= order.customer.department %></p><% } %>
+                                <% if (order.customer.street) { %><p class="mb-1"><%= order.customer.street %></p><% } %>
+                                <% if (order.customer.zip || order.customer.city) { %>
+                                    <p class="mb-1"><%= order.customer.zip || '' %> <%= order.customer.city || '' %></p>
+                                <% } %>
+                                <% if (order.customer.country) { %><p class="mb-1"><%= order.customer.country %></p><% } %>
+
+                                <hr>
+
+                                <% if (order.customer.email) { %>
+                                    <p class="mb-1"><i class="fas fa-envelope"></i> <%= order.customer.email %></p>
+                                <% } %>
+                                <% if (order.customer.phone) { %>
+                                    <p class="mb-1"><i class="fas fa-phone"></i> <%= order.customer.phone %></p>
+                                <% } %>
+                            <% } else { %>
+                                <p>Keine Kundeninformationen verfügbar</p>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Versandinformationen, falls vorhanden -->
+                    <% if (order.shipping && (order.shipping.method || order.shipping.carrier || order.shipping.trackingNumber)) { %>
+                        <h4 class="mt-4">Versandinformationen</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <% if (order.shipping.method) { %>
+                                    <p><strong>Versandart:</strong> <%= order.shipping.method %></p>
+                                <% } %>
+                                <% if (order.shipping.carrier) { %>
+                                    <p><strong>Spediteur:</strong> <%= order.shipping.carrier %></p>
+                                <% } %>
+                                <% if (order.shipping.trackingNumber) { %>
+                                    <p>
+                                        <strong>Tracking-Nr.:</strong>
+                                        <%= order.shipping.trackingNumber %>
+                                        <% if (order.shipping.trackingUrl) { %>
+                                            <a href="<%= order.shipping.trackingUrl %>" target="_blank" class="ms-2">
+                                                <i class="fas fa-external-link-alt"></i> Verfolgen
+                                            </a>
+                                        <% } %>
+                                    </p>
+                                <% } %>
+                                <% if (order.shipping.weight) { %>
+                                    <p><strong>Gewicht:</strong> <%= order.shipping.weight %> kg</p>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Artikelliste -->
+            <h4 class="mt-4">Artikel</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Pos</th>
+                        <th>Artikelnr.</th>
+                        <th>Beschreibung</th>
+                        <th>Menge</th>
+                        <th>Einheit</th>
+                        <th>Lager</th>
+                        <th>Charge</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% if (order.items && order.items.length > 0) { %>
+                        <% order.items.forEach((item, index) => { %>
+                            <tr>
+                                <td><%= item.position || index + 1 %></td>
+                                <td><%= item.articleNumber %></td>
+                                <td><%= item.description %></td>
+                                <td><%= item.quantity %></td>
+                                <td><%= item.unit %></td>
+                                <td>
+                                    <% if (item.warehouseName) { %>
+                                        <%= item.warehouseName %>
+                                        <% if (item.storageLocation) { %>
+                                            (<%= item.storageLocation %>)
+                                        <% } %>
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </td>
+                                <td><%= item.batch || '-' %></td>
+                                <td>
+                                    <% if (item.quantityPicked >= item.quantity) { %>
+                                        <span class="badge bg-success">Kommissioniert</span>
+                                    <% } else if (item.quantityPicked > 0) { %>
+                                        <span class="badge bg-warning">Teilweise</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary">Offen</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8" class="text-center">Keine Artikel vorhanden</td>
+                        </tr>
+                    <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Kommentare -->
+            <% if (order.customerComment || order.internalComment) { %>
+                <div class="row mt-4">
+                    <% if (order.customerComment) { %>
+                        <div class="col-md-6">
+                            <h4>Kundenkommentar</h4>
+                            <div class="alert alert-info">
+                                <%= order.customerComment %>
+                            </div>
+                        </div>
+                    <% } %>
+                    <% if (order.internalComment) { %>
+                        <div class="col-md-6">
+                            <h4>Interner Kommentar</h4>
+                            <div class="alert alert-secondary">
+                                <%= order.internalComment %>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            <% } %>
+
+            <!-- Aktionsbuttons -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <% if (order.status === 'new') { %>
+                        <!-- Verpackungsmethode auswählen -->
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Verpackungsmethode wählen</h5>
+                            </div>
+                            <div class="card-body">
+                                <form action="/orders/<%= order._id %>/packaging" method="POST">
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="packagingMethod" id="method-package" value="package" checked>
+                                                <label class="form-check-label" for="method-package">
+                                                    <i class="fas fa-box"></i> Paket (Einzelversand)
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="packagingMethod" id="method-pallet" value="pallet">
+                                                <label class="form-check-label" for="method-pallet">
+                                                    <i class="fas fa-pallet"></i> Palette
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="packagingMethod" id="method-homogeneous" value="homogeneous">
+                                                <label class="form-check-label" for="method-homogeneous">
+                                                    <i class="fas fa-layer-group"></i> Sortenrein
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="packagingMethod" id="method-mixed" value="mixed">
+                                                <label class="form-check-label" for="method-mixed">
+                                                    <i class="fas fa-boxes"></i> Gemischt
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-play"></i> Kommissionierung starten
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    <% } else if (order.status === 'in_progress') { %>
+                        <div class="text-center mb-4">
+                            <a href="/packaging/<%= order.packagingMethod %>/<%= order._id %>" class="btn btn-primary btn-lg">
+                                <i class="fas fa-box-open"></i> Kommissionierung fortsetzen
+                            </a>
+                        </div>
+                    <% } else if (order.status === 'packed') { %>
+                        <div class="text-center mb-4">
+                            <a href="/shipping/<%= order._id %>" class="btn btn-primary btn-lg">
+                                <i class="fas fa-truck"></i> Versand bearbeiten
+                            </a>
+                        </div>
+                    <% } %>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/orders" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Zurück zur Liste
+                        </a>
+
+                        <div>
+                            <% if (order.status === 'in_progress' || order.status === 'packed') { %>
+                                <a href="/labels/<%= order._id %>" class="btn btn-info me-2">
+                                    <i class="fas fa-tags"></i> Etiketten drucken
+                                </a>
+                            <% } %>
+
+                            <% if (order.status !== 'completed') { %>
+                                <form action="/orders/<%= order._id %>/complete" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('Sind Sie sicher, dass Sie diesen Auftrag abschließen möchten?');">
+                                        <i class="fas fa-check-circle"></i> Auftrag abschließen
+                                    </button>
+                                </form>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
