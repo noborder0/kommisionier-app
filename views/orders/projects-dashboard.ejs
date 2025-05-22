@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Kommissionier-App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .projects-header {
+            background: linear-gradient(135deg, #6610f2 0%, #6f42c1 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .projects-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.05) 20px,
+                    rgba(255,255,255,0.05) 40px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #6610f2;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .project-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .project-id {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+
+        .project-progress {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-multi {
+            display: flex;
+            height: 100%;
+        }
+
+        .progress-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-new { background: #6c757d; }
+        .progress-in-progress { background: #ffc107; }
+        .progress-packed { background: #17a2b8; }
+        .progress-shipped { background: #28a745; }
+
+        .project-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .priority-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #dc3545;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .last-activity {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-left: 40px;
+            border-radius: 25px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .project-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .projects-header {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<%- include('../partials/navbar') %>
+
+<div class="container mt-4">
+    <!-- Projects Header -->
+    <div class="projects-header">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-folder-open"></i> Projekt-Übersicht
+                </h1>
+                <p class="lead">
+                    Verwalten Sie Ihre Fulfillment-Projekte und deren Aufträge
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="mt-3">
+                    <a href="/orders/batch-pick" class="btn btn-light btn-lg">
+                        <i class="fas fa-layer-group"></i> Batch-Picking
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text"
+                           class="form-control"
+                           id="projectSearch"
+                           placeholder="Projekt suchen...">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
+                    <select class="form-select" id="sortBy" style="width: auto;">
+                        <option value="orders">Nach Aufträgen</option>
+                        <option value="activity">Nach Aktivität</option>
+                        <option value="name">Nach Name</option>
+                        <option value="urgent">Nach Dringlichkeit</option>
+                    </select>
+                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                        <i class="fas fa-sync"></i> Aktualisieren
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div id="projectsGrid">
+        <% if (projects && projects.length > 0) { %>
+            <% projects.forEach(project => { %>
+                <div class="project-card"
+                     data-project-id="<%= project.id %>"
+                     data-project-name="<%= project.name %>"
+                     onclick="window.location.href='/orders/project/<%= project.id %>'">
+
+                    <% if (project.urgentOrders > 0) { %>
+                        <div class="priority-badge">
+                            <%= project.urgentOrders %> Dringend
+                        </div>
+                    <% } %>
+
+                    <div class="project-header">
+                        <div>
+                            <h3 class="project-name">
+                                <i class="fas fa-folder text-primary me-2"></i>
+                                <%= project.name || 'Ohne Projektname' %>
+                            </h3>
+                            <div class="project-id">
+                                ID: <%= project.id || 'Keine ID' %>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary fs-6">
+                                <%= project.totalOrders %> Aufträge
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="project-progress">
+                        <div class="progress-bar-multi">
+                            <%
+                                const total = project.totalOrders || 1;
+                                const newWidth = (project.newOrders / total * 100) || 0;
+                                const inProgressWidth = (project.inProgressOrders / total * 100) || 0;
+                                const packedWidth = (project.packedOrders / total * 100) || 0;
+                                const shippedWidth = (project.shippedOrders / total * 100) || 0;
+                            %>
+                            <div class="progress-segment progress-new" style="width: <%= newWidth %>%"></div>
+                            <div class="progress-segment progress-in-progress" style="width: <%= inProgressWidth %>%"></div>
+                            <div class="progress-segment progress-packed" style="width: <%= packedWidth %>%"></div>
+                            <div class="progress-segment progress-shipped" style="width: <%= shippedWidth %>%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="project-stats">
+                        <div class="stat-box">
+                            <span class="stat-value text-secondary"><%= project.newOrders %></span>
+                            <span class="stat-label">Neu</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value text-warning"><%= project.inProgressOrders %></span>
+                            <span class="stat-label">In Arbeit</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value text-info"><%= project.packedOrders %></span>
+                            <span class="stat-label">Verpackt</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value text-success"><%= project.shippedOrders %></span>
+                            <span class="stat-label">Versendet</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-value text-primary"><%= project.totalItems %></span>
+                            <span class="stat-label">Artikel</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="project-actions">
+                        <a href="/orders/project/<%= project.id %>"
+                           class="btn btn-sm btn-outline-primary"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-list"></i> Aufträge anzeigen
+                        </a>
+                        <a href="/orders/project/<%= project.id %>/batch-pick"
+                           class="btn btn-sm btn-outline-success"
+                           onclick="event.stopPropagation()">
+                            <i class="fas fa-boxes"></i> Batch-Picking
+                        </a>
+                        <% if (project.newOrders > 0) { %>
+                            <a href="/orders/project/<%= project.id %>?status=new"
+                               class="btn btn-sm btn-outline-warning"
+                               onclick="event.stopPropagation()">
+                                <i class="fas fa-play"></i> Starten
+                            </a>
+                        <% } %>
+                    </div>
+
+                    <div class="last-activity">
+                        <i class="fas fa-clock"></i>
+                        Letzte Aktivität:
+                        <%= project.lastActivity ? new Date(project.lastActivity).toLocaleString('de-DE') : 'Keine Aktivität' %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h3>Keine Projekte gefunden</h3>
+                <p class="text-muted">
+                    Synchronisieren Sie Ihre Aufträge, um Projekte anzuzeigen.
+                </p>
+                <a href="/orders/sync" class="btn btn-primary mt-3">
+                    <i class="fas fa-sync"></i> Jetzt synchronisieren
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Projekt-Suche
+    document.getElementById('projectSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const projectCards = document.querySelectorAll('.project-card');
+
+        projectCards.forEach(card => {
+            const projectName = card.dataset.projectName.toLowerCase();
+            const projectId = card.dataset.projectId.toLowerCase();
+
+            if (projectName.includes(searchTerm) || projectId.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+
+    // Sortierung
+    document.getElementById('sortBy').addEventListener('change', function(e) {
+        const sortBy = e.target.value;
+        const container = document.getElementById('projectsGrid');
+        const cards = Array.from(container.querySelectorAll('.project-card'));
+
+        cards.sort((a, b) => {
+            switch(sortBy) {
+                case 'orders':
+                    return parseInt(b.querySelector('.badge').textContent) -
+                        parseInt(a.querySelector('.badge').textContent);
+                case 'name':
+                    return a.dataset.projectName.localeCompare(b.dataset.projectName);
+                case 'activity':
+                    // Implementierung für Aktivitäts-Sortierung
+                    return 0;
+                case 'urgent':
+                    const urgentA = a.querySelector('.priority-badge') ?
+                        parseInt(a.querySelector('.priority-badge').textContent) : 0;
+                    const urgentB = b.querySelector('.priority-badge') ?
+                        parseInt(b.querySelector('.priority-badge').textContent) : 0;
+                    return urgentB - urgentA;
+                default:
+                    return 0;
+            }
+        });
+
+        cards.forEach(card => container.appendChild(card));
+    });
+
+    // Auto-Refresh alle 60 Sekunden
+    setInterval(() => {
+        location.reload();
+    }, 60000);
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            document.getElementById('projectSearch').focus();
+        }
+    });
+</script>
+</body>
+</html>

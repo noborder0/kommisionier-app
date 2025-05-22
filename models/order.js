@@ -274,4 +274,278 @@ Order.mapApiPositionsToSchema = function(apiPositions) {
     });
 };
 
+// Projekt-bezogene statische Methoden
+OrderSchema.statics.getProjectStats = async function(projectId, dateRange = {}) {
+    const match = { 'project.id': projectId };
+
+    if (dateRange.start) {
+        match.createdAt = { $gte: dateRange.start };
+    }
+    if (dateRange.end) {
+        match.createdAt = { ...match.createdAt, $lte: dateRange.end };
+    }
+
+    return this.aggregate([
+        { $match: match },
+        {
+            $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                totalItems: { $sum: { $size: '$items' } },
+                totalQuantity: {
+                    $sum: {
+                        $reduce: {
+                            input: '$items',
+                            initialValue: 0,
+                            in: { $add: ['$$value', '$$this.quantity'] }
+                        }
+                    }
+                },
+                avgItemsPerOrder: { $avg: { $size: '$items' } },
+                statusBreakdown: {
+                    $push: '$status'
+                },
+                uniqueCustomers: { $addToSet: '$customer.name' },
+                avgProcessingTime: {
+                    $avg: {
+                        $cond: [
+                            { $ne: ['$shippingDate', null] },
+                            { $subtract: ['$shippingDate', '$createdAt'] },
+                            null
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                totalOrders: 1,
+                totalItems: 1,
+                totalQuantity: 1,
+                avgItemsPerOrder: { $round: ['$avgItemsPerOrder', 2] },
+                uniqueCustomers: { $size: '$uniqueCustomers' },
+                avgProcessingTime: {
+                    $divide: ['$avgProcessingTime', 1000 * 60 * 60] // In Stunden
+                },
+                statusCounts: {
+                    $arrayToObject: {
+                        $map: {
+                            input: { $setUnion: ['$statusBreakdown'] },
+                            as: 'status',
+                            in: {
+                                k: '$$status',
+                                v: {
+                                    $size: {
+                                        $filter: {
+                                            input: '$statusBreakdown',
+                                            cond: { $eq: ['$$this', '$$status'] }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]);
+};
+
+// Häufigste Artikel pro Projekt
+OrderSchema.statics.getTopItemsByProject = async function(projectId, limit = 10) {
+    return this.aggregate([
+        { $match: { 'project.id': projectId } },
+        { $unwind: '$items' },
+        {
+            $group: {
+                _id: {
+                    sku: '$items.sku',
+                    articleNumber: '$items.articleNumber',
+                    description: '$items.description'
+                },
+                totalQuantity: { $sum: '$items.quantity' },
+                orderCount: { $sum: 1 },
+                avgQuantityPerOrder: { $avg: '$items.quantity' },
+                storageLocations: { $addToSet: '$items.storageLocation' }
+            }
+        },
+        { $sort: { totalQuantity: -1 } },
+        { $limit: limit },
+        {
+            $project: {
+                sku: '$_id.sku',
+                articleNumber: '$_id.articleNumber',
+                description: '$_id.description',
+                totalQuantity: 1,
+                orderCount: 1,
+                avgQuantityPerOrder: { $round: ['$avgQuantityPerOrder', 2] },
+                storageLocations: 1,
+                _id: 0
+            }
+        }
+    ]);
+};
+
+// Projekt-basierte Lagerplatz-Analyse
+OrderSchema.statics.getProjectStorageAnalysis = async function(projectId) {
+    return this.aggregate([
+        { $match: { 'project.id': projectId } },
+        { $unwind: '$items' },
+        {
+            $group: {
+                _id: '$items.storageLocation',
+                itemCount: { $sum: 1 },
+                totalQuantity: { $sum: '$items.quantity' },
+                uniqueSkus: { $addToSet: '$items.sku' }
+            }
+        },
+        {
+            $project: {
+                location: '$_id',
+                itemCount: 1,
+                totalQuantity: 1,
+                uniqueSkuCount: { $size: '$uniqueSkus' },
+                _id: 0
+            }
+        },
+        { $sort: { totalQuantity: -1 } }
+    ]);
+};
+
+// Instanz-Methoden
+OrderSchema.methods.isProjectOrder = function() {
+    return this.project && this.project.id;
+};
+
+OrderSchema.methods.getProjectZone = function() {
+    // Bestimme die Projekt-spezifische Lagerzone
+    if (!this.project?.id) return null;
+
+    // Beispiel: Erste Zeichen des Projekt-IDs als Zone
+    return this.project.id.substring(0, 1).toUpperCase();
+};
+
+OrderSchema.methods.calculateProjectPriority = function() {
+    let priority = 0;
+
+    // Basis-Priorität nach Status
+    const statusPriority = {
+        'new': 10,
+        'in_progress': 5,
+        'packed': 3,
+        'shipped': 1,
+        'completed': 0
+    };
+    priority += statusPriority[this.status] || 0;
+
+    // Express-Bonus
+    if (this.priority === 'high' || this.shippingMethod?.name?.includes('Express')) {
+        priority += 20;
+    }
+
+    // Deadline-Bonus
+    if (this.shippingDeadline) {
+        const hoursUntilDeadline = (new Date(this.shippingDeadline) - new Date()) / (1000 * 60 * 60);
+        if (hoursUntilDeadline < 2) priority += 50;
+        else if (hoursUntilDeadline < 4) priority += 30;
+        else if (hoursUntilDeadline < 8) priority += 15;
+    }
+
+    // Projekt-spezifische Priorität
+    if (this.project?.priority === 'high') {
+        priority += 25;
+    }
+
+    return priority;
+};
+
+// Virtuelle Felder
+OrderSchema.virtual('projectDisplayName').get(function() {
+    if (!this.project) return 'Ohne Projekt';
+    return this.project.name || `Projekt ${this.project.id}`;
+});
+
+OrderSchema.virtual('estimatedPickingTime').get(function() {
+    // Schätze Kommissionierzeit basierend auf Projekt-Erfahrung
+    const baseTimePerItem = 2; // Minuten
+    const itemCount = this.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Projekt-spezifischer Multiplikator (könnte aus historischen Daten kommen)
+    const projectMultiplier = this.project?.complexity || 1;
+
+    return Math.ceil(itemCount * baseTimePerItem * projectMultiplier);
+});
+
+// Indizes für Projekt-Queries
+OrderSchema.index({ 'project.id': 1, status: 1 });
+OrderSchema.index({ 'project.id': 1, createdAt: -1 });
+OrderSchema.index({ 'project.name': 1 });
+
+// Pre-save Hook für Projekt-Validierung
+OrderSchema.pre('save', function(next) {
+    // Stelle sicher, dass Projekt-Daten konsistent sind
+    if (this.project && !this.project.name && this.project.id) {
+        // Könnte hier den Projektnamen aus einer anderen Quelle laden
+        this.project.name = `Projekt ${this.project.id}`;
+    }
+
+    // Setze Projekt-basierte Standardwerte
+    if (this.isNew && this.project) {
+        // Projekt-spezifische Lagerzone zuweisen
+        const projectZone = this.getProjectZone();
+        this.items.forEach(item => {
+            if (!item.storageLocation && projectZone) {
+                // Generiere vorläufigen Lagerplatz
+                item.storageLocation = `${projectZone}01-01-01`;
+            }
+        });
+    }
+
+    next();
+});
+
+// Query Helpers für Projekt-Filter
+OrderSchema.query.byProject = function(projectId) {
+    return this.where({ 'project.id': projectId });
+};
+
+OrderSchema.query.withoutProject = function() {
+    return this.where({
+        $or: [
+            { project: { $exists: false } },
+            { 'project.id': { $exists: false } }
+        ]
+    });
+};
+
+OrderSchema.query.byProjectName = function(projectName) {
+    return this.where({ 'project.name': new RegExp(projectName, 'i') });
+};
+
+// Aggregation Pipeline Helpers
+OrderSchema.statics.getProjectSummary = async function() {
+    return this.aggregate([
+        {
+            $group: {
+                _id: {
+                    id: '$project.id',
+                    name: '$project.name'
+                },
+                orderCount: { $sum: 1 },
+                lastActivity: { $max: '$updatedAt' }
+            }
+        },
+        {
+            $project: {
+                projectId: '$_id.id',
+                projectName: '$_id.name',
+                orderCount: 1,
+                lastActivity: 1,
+                _id: 0
+            }
+        },
+        { $sort: { orderCount: -1 } }
+    ]);
+};
+
 module.exports = Order;

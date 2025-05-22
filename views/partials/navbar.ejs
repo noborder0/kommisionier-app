@@ -14,36 +14,77 @@
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/orders">
+
+                    <!-- Hauptnavigation mit Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-clipboard-list"></i> Aufträge
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="ordersDropdown">
+                            <li><a class="dropdown-item" href="/orders">
+                                    <i class="fas fa-list"></i> Alle Aufträge
+                                </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/orders/express">
+                                    <i class="fas fa-rocket text-danger"></i> Express-Dashboard
+                                    <span class="badge bg-danger ms-2">NEU</span>
+                                </a></li>
+                            <li><a class="dropdown-item" href="/orders/batch-pick">
+                                    <i class="fas fa-layer-group text-primary"></i> Batch-Picking
+                                    <span class="badge bg-primary ms-2">NEU</span>
+                                </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/orders?status=new">
+                                    <i class="fas fa-plus-circle"></i> Neue Aufträge
+                                </a></li>
+                            <li><a class="dropdown-item" href="/orders?status=in_progress">
+                                    <i class="fas fa-hourglass-half"></i> In Bearbeitung
+                                </a></li>
+                            <li><a class="dropdown-item" href="/orders?status=packed">
+                                    <i class="fas fa-box"></i> Verpackt
+                                </a></li>
+                        </ul>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="/orders/search">
                             <i class="fas fa-search"></i> Suchen
                         </a>
                     </li>
 
+                    <!-- Werkzeuge Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-tools"></i> Werkzeuge
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
+                            <li><a class="dropdown-item" href="/orders/sync">
+                                    <i class="fas fa-sync"></i> Synchronisierung
+                                </a></li>
+                            <% if(user.role === 'admin') { %>
+                                <li><a class="dropdown-item" href="/orders/api-test">
+                                        <i class="fas fa-plug"></i> API-Test
+                                    </a></li>
+                            <% } %>
+                        </ul>
+                    </li>
+
                     <!-- Admin-spezifische Navigation -->
                     <% if(user.role === 'admin') { %>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-tools"></i> Administration
+                                <i class="fas fa-cog"></i> Administration
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                                 <li><a class="dropdown-item" href="/settings">
                                         <i class="fas fa-cogs"></i> Einstellungen
                                     </a></li>
-                                <li><a class="dropdown-item" href="/settings/api-test">
-                                        <i class="fas fa-plug"></i> API-Test
-                                    </a></li>
-                                <li><a class="dropdown-item" href="/settings/sync">
-                                        <i class="fas fa-sync"></i> Synchronisierung
-                                    </a></li>
-                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/auth/register">
                                         <i class="fas fa-user-plus"></i> Benutzer hinzufügen
+                                    </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/settings/api-test">
+                                        <i class="fas fa-vial"></i> System-Test
                                     </a></li>
                             </ul>
                         </li>
@@ -51,13 +92,40 @@
                 <% } %>
             </ul>
 
+            <!-- Rechte Seite der Navigation -->
             <ul class="navbar-nav ms-auto">
+                <!-- Quick Actions -->
+                <% if(user) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/orders/search" title="Schnellsuche (Strg+F)">
+                            <i class="fas fa-barcode"></i>
+                            <span class="d-lg-none">Scanner</span>
+                        </a>
+                    </li>
+
+                    <!-- Notifications (placeholder) -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge bg-danger badge-pill" style="font-size: 0.6rem; position: absolute; top: 8px; right: 8px;">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                            <li><h6 class="dropdown-header">Benachrichtigungen</h6></li>
+                            <li><a class="dropdown-item text-muted" href="#">
+                                    <small>Keine neuen Benachrichtigungen</small>
+                                </a></li>
+                        </ul>
+                    </li>
+                <% } %>
+
+                <!-- User Menu -->
                 <% if(user) { %>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user"></i> <%= user.name %>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span><%= user.name %></span>
                             <% if(user.role === 'admin') { %>
-                                <span class="badge bg-warning ms-1">Admin</span>
+                                <span class="badge bg-warning ms-2">Admin</span>
                             <% } %>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -68,7 +136,14 @@
                                     Rolle: <%= user.role === 'admin' ? 'Administrator' : user.role === 'warehouse' ? 'Lager' : 'Versand' %>
                                 </small></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/auth/logout">
+                            <li><a class="dropdown-item" href="/profile">
+                                    <i class="fas fa-user"></i> Mein Profil
+                                </a></li>
+                            <li><a class="dropdown-item" href="/settings/preferences">
+                                    <i class="fas fa-sliders-h"></i> Einstellungen
+                                </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="/auth/logout">
                                     <i class="fas fa-sign-out-alt"></i> Logout
                                 </a></li>
                         </ul>
@@ -84,3 +159,39 @@
         </div>
     </div>
 </nav>
+
+<!-- Keyboard Shortcuts Info -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="toast" id="shortcutToast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div class="toast-header">
+            <i class="fas fa-keyboard me-2"></i>
+            <strong class="me-auto">Tastenkürzel</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            <small>
+                <strong>Strg+F</strong> - Suche<br>
+                <strong>Strg+B</strong> - Batch-Picking<br>
+                <strong>Strg+E</strong> - Express<br>
+                <strong>Strg+L</strong> - Auftragsliste<br>
+                <strong>F5</strong> - Aktualisieren
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Zeige Tastenkürzel-Toast bei erstem Besuch
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!localStorage.getItem('shortcutsShown')) {
+            setTimeout(() => {
+                const toastEl = document.getElementById('shortcutToast');
+                if (toastEl) {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                    localStorage.setItem('shortcutsShown', 'true');
+                }
+            }, 2000);
+        }
+    });
+</script>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Kommissionier-App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .project-header {
+            background: linear-gradient(135deg, #6610f2 0%, #6f42c1 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .top-items-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .item-frequency-bar {
+            background: #e9ecef;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .frequency-fill {
+            background: linear-gradient(90deg, #6610f2 0%, #6f42c1 100%);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filter-tabs {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .project-info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .batch-suggestion {
+            background: #e7f3ff;
+            border: 2px solid #0d6efd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .storage-zone-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #6610f2;
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+<%- include('../partials/navbar') %>
+
+<div class="container mt-4">
+    <!-- Project Header -->
+    <div class="project-header">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-5 mb-2">
+                    <i class="fas fa-folder"></i> <%= projectName %>
+                </h1>
+                <p class="mb-0 opacity-75">
+                    Projekt-ID: <%= projectId %>
+                    <span class="storage-zone-indicator">
+                        Zone <%= projectId.substring(0, 1).toUpperCase() %>
+                    </span>
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="/orders/projects" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Zur Übersicht
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value text-primary"><%= stats.total %></div>
+            <div class="stat-label">Gesamt Aufträge</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-secondary"><%= stats.new %></div>
+            <div class="stat-label">Neue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-warning"><%= stats.inProgress %></div>
+            <div class="stat-label">In Bearbeitung</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-info"><%= stats.packed %></div>
+            <div class="stat-label">Verpackt</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-success"><%= stats.shipped %></div>
+            <div class="stat-label">Versendet</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value text-danger"><%= stats.urgent %></div>
+            <div class="stat-label">Dringend</div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="/orders/project/<%= projectId %>/batch-pick" class="btn btn-primary btn-lg">
+            <i class="fas fa-layer-group"></i> Batch-Picking starten
+        </a>
+        <% if (stats.new > 0) { %>
+            <button class="btn btn-success btn-lg" onclick="startAllNew()">
+                <i class="fas fa-play"></i> Alle neuen starten
+            </button>
+        <% } %>
+        <a href="/orders/search?project=<%= projectId %>" class="btn btn-outline-primary">
+            <i class="fas fa-search"></i> Im Projekt suchen
+        </a>
+        <button class="btn btn-outline-secondary" onclick="exportProjectData()">
+            <i class="fas fa-download"></i> Exportieren
+        </button>
+    </div>
+
+    <!-- Batch Suggestion -->
+    <% if (stats.new >= 5) { %>
+        <div class="batch-suggestion">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="fas fa-lightbulb"></i> Batch-Picking empfohlen
+                    </h5>
+                    <p class="mb-0">
+                        Sie haben <%= stats.new %> neue Aufträge.
+                        Batch-Picking spart bis zu 60% Zeit bei der Kommissionierung.
+                    </p>
+                </div>
+                <a href="/orders/project/<%= projectId %>/batch-pick" class="btn btn-primary">
+                    <i class="fas fa-boxes"></i> Jetzt starten
+                </a>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Top Items -->
+    <% if (topItems && topItems.length > 0) { %>
+        <div class="top-items-section">
+            <h4 class="mb-3">
+                <i class="fas fa-chart-bar"></i> Häufigste Artikel in diesem Projekt
+            </h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Artikel</th>
+                        <th>Beschreibung</th>
+                        <th>Gesamtmenge</th>
+                        <th>Aufträge</th>
+                        <th>Visualisierung</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <%
+                        const maxQuantity = Math.max(...topItems.map(item => item.totalQuantity));
+                    topItems.forEach(item => {
+                        const percentage = (item.totalQuantity / maxQuantity) * 100;
+                    %>
+                    <tr>
+                        <td><strong><%= item.sku %></strong></td>
+                        <td><%= item.description || '-' %></td>
+                        <td>
+                                    <span class="badge bg-primary">
+                                        <%= item.totalQuantity %> Stk
+                                    </span>
+                        </td>
+                        <td><%= item.count %></td>
+                        <td style="width: 200px;">
+                            <div class="item-frequency-bar">
+                                <div class="frequency-fill" style="width: <%= percentage %>%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link <%= activeStatus === 'all' ? 'active' : '' %>"
+                   href="/orders/project/<%= projectId %>">
+                    Alle (<%= stats.total %>)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= activeStatus === 'new' ? 'active' : '' %>"
+                   href="/orders/project/<%= projectId %>?status=new">
+                    Neu (<%= stats.new %>)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= activeStatus === 'in_progress' ? 'active' : '' %>"
+                   href="/orders/project/<%= projectId %>?status=in_progress">
+                    In Bearbeitung (<%= stats.inProgress %>)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= activeStatus === 'packed' ? 'active' : '' %>"
+                   href="/orders/project/<%= projectId %>?status=packed">
+                    Verpackt (<%= stats.packed %>)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= activeStatus === 'shipped' ? 'active' : '' %>"
+                   href="/orders/project/<%= projectId %>?status=shipped">
+                    Versendet (<%= stats.shipped %>)
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Lieferschein</th>
+                        <th>Kunde</th>
+                        <th>Artikel</th>
+                        <th>Status</th>
+                        <th>Erstellt</th>
+                        <th>Aktionen</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <% orders.forEach(order => { %>
+                        <tr>
+                            <td>
+                                <strong><%= order.deliveryNoteNumber %></strong>
+                                <% if (order.priority === 'high' || order.shippingDeadline) { %>
+                                    <span class="badge bg-danger ms-2">Express</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (order.customer && order.customer.name) { %>
+                                    <%= order.customer.name %>
+                                <% } else { %>
+                                    -
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (order.items && order.items.length > 0) { %>
+                                    <span class="badge bg-secondary">
+                                            <%= order.items.length %> Artikel
+                                        </span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (order.status === 'new') { %>
+                                    <span class="badge bg-secondary">Neu</span>
+                                <% } else if (order.status === 'in_progress') { %>
+                                    <span class="badge bg-warning">In Bearbeitung</span>
+                                <% } else if (order.status === 'packed') { %>
+                                    <span class="badge bg-info">Verpackt</span>
+                                <% } else if (order.status === 'shipped') { %>
+                                    <span class="badge bg-primary">Versendet</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <%= order.createdAt ? order.createdAt.toLocaleDateString('de-DE') : '-' %>
+                            </td>
+                            <td>
+                                <a href="/orders/<%= order._id %>" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <% if (order.status === 'new') { %>
+                                    <button class="btn btn-sm btn-outline-success"
+                                            onclick="quickStart('<%= order._id %>')">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Quick Start für einzelnen Auftrag
+    async function quickStart(orderId) {
+        try {
+            const response = await fetch(`/orders/${orderId}/auto-pack`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                window.location.href = `/orders/${orderId}`;
+            } else {
+                alert('Fehler: ' + (result.error || 'Unbekannter Fehler'));
+            }
+        } catch (error) {
+            console.error('Fehler beim Schnellstart:', error);
+            alert('Fehler beim Starten des Auftrags');
+        }
+    }
+
+    // Alle neuen Aufträge starten
+    async function startAllNew() {
+        if (!confirm('Möchten Sie alle neuen Aufträge für die Kommissionierung vorbereiten?')) {
+            return;
+        }
+
+        alert('Diese Funktion wird in Kürze implementiert. Nutzen Sie vorerst Batch-Picking.');
+    }
+
+    // Export-Funktion
+    function exportProjectData() {
+        const projectId = '<%= projectId %>';
+        window.open(`/api/project/${projectId}/export`, '_blank');
+    }
+
+    // Auto-Refresh alle 60 Sekunden
+    setInterval(() => {
+        if (!document.querySelector('.modal.show')) {
+            location.reload();
+        }
+    }, 60000);
+</script>
+</body>
+</html>
