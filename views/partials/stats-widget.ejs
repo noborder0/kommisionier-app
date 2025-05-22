@@ -1,0 +1,61 @@
+
+<!-- partials/stats-widgets.ejs -->
+<div class="stats-widgets">
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value" id="stat-new-orders"><%= stats.newOrders || 0 %></h3>
+                        <p class="stat-label">Neue Aufträge</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value" id="stat-in-progress"><%= stats.inProgressOrders || 0 %></h3>
+                        <p class="stat-label">In Bearbeitung</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value" id="stat-packed"><%= stats.packedOrders || 0 %></h3>
+                        <p class="stat-label">Verpackt</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value" id="stat-shipped-today"><%= stats.shippedToday || 0 %></h3>
+                        <p class="stat-label">Heute versendet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

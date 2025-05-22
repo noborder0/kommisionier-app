@@ -1,0 +1,28 @@
+<!-- partials/flash-messages.ejs -->
+<% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle"></i> <%= success_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-triangle"></i> <%= error_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if(typeof warning_msg !== 'undefined' && warning_msg !== '') { %>
+    <div class="alert alert-warning alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle"></i> <%= warning_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if(typeof info_msg !== 'undefined' && info_msg !== '') { %>
+    <div class="alert alert-info alert-dismissible fade show">
+        <i class="fas fa-info-circle"></i> <%= info_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>

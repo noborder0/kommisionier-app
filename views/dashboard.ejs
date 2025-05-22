@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> | Kommissionier-App</title>
+    <title><%= title || 'Dashboard' %> | Kommissionier-App</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
@@ -71,7 +71,7 @@
                         <div class="col-md-8">
                             <h2 class="mb-1">
                                 <i class="fas fa-tachometer-alt"></i>
-                                Willkommen, <%= user.name %>!
+                                Willkommen<% if(typeof user !== 'undefined' && user && user.name) { %>, <%= user.name %><% } %>!
                             </h2>
                             <p class="mb-0 lead">
                                 Kommissionier- und Warenausgangssystem
@@ -100,20 +100,20 @@
     </div>
 
     <!-- Sync-Status wenn Admin -->
-    <% if(user.role === 'admin' && syncStats) { %>
+    <% if(typeof user !== 'undefined' && user && user.role === 'admin' && typeof syncStats !== 'undefined' && syncStats) { %>
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card <%= syncStats.isRunning ? 'border-success' : 'border-warning' %>">
+                <div class="card <%= (syncStats.isRunning) ? 'border-success' : 'border-warning' %>">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h6 class="mb-1">
-                                    <i class="fas fa-sync <%= syncStats.isRunning ? 'text-success' : 'text-warning' %>"></i>
+                                    <i class="fas fa-sync <%= (syncStats.isRunning) ? 'text-success' : 'text-warning' %>"></i>
                                     Synchronisierungs-Status
                                 </h6>
                                 <div>
                                     <% if (syncStats.isRunning) { %>
-                                        <span class="badge bg-success <%= syncStats.isSyncing ? 'sync-indicator' : '' %>">
+                                        <span class="badge bg-success <%= (syncStats.isSyncing) ? 'sync-indicator' : '' %>">
                                             <i class="fas fa-check-circle"></i> Aktiv
                                         </span>
                                         <% if (syncStats.isSyncing) { %>
@@ -122,7 +122,7 @@
                                             </span>
                                         <% } %>
                                         <small class="text-muted ms-2">
-                                            Alle <%= syncStats.syncIntervalMinutes %> Minute(n)
+                                            Alle <%= syncStats.syncIntervalMinutes || 1 %> Minute(n)
                                         </small>
                                     <% } else { %>
                                         <span class="badge bg-warning">
@@ -136,7 +136,7 @@
                                 <% if (syncStats.lastSyncTime) { %>
                                     <small class="text-muted">
                                         Letzte Synchronisierung: <%= new Date(syncStats.lastSyncTime).toLocaleTimeString('de-DE') %>
-                                        <% if (syncStats.successfulSyncs > 0) { %>
+                                        <% if (syncStats.successfulSyncs > 0 && syncStats.totalSyncs > 0) { %>
                                             | Erfolgsrate: <%= Math.round((syncStats.successfulSyncs / syncStats.totalSyncs) * 100) %>%
                                         <% } %>
                                     </small>
@@ -291,7 +291,7 @@
     </div>
 
     <!-- Sync-Status für alle Benutzer (vereinfacht) -->
-    <% if(user.role !== 'admin') { %>
+    <% if(typeof user !== 'undefined' && user && user.role !== 'admin') { %>
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card bg-light">
@@ -303,11 +303,11 @@
                                     Automatische Synchronisierung mit No Border
                                 </h6>
                                 <p class="mb-0 text-muted small">
-                                    Neue Lieferscheine werden automatisch alle <%= syncStats && syncStats.syncIntervalMinutes ? syncStats.syncIntervalMinutes : 1 %> Minute(n) importiert.
+                                    Neue Lieferscheine werden automatisch alle <%= (typeof syncStats !== 'undefined' && syncStats && syncStats.syncIntervalMinutes) ? syncStats.syncIntervalMinutes : 1 %> Minute(n) importiert.
                                 </p>
                             </div>
                             <div class="col-md-4 text-end">
-                                <% if(syncStats && syncStats.isRunning) { %>
+                                <% if(typeof syncStats !== 'undefined' && syncStats && syncStats.isRunning) { %>
                                     <span class="badge bg-success">
                                         <i class="fas fa-check-circle"></i> Aktiv
                                     </span>
@@ -399,23 +399,32 @@
             if (response.ok) {
                 const stats = await response.json();
 
-                document.getElementById('new-orders-count').textContent = stats.newOrders || 0;
-                document.getElementById('progress-orders-count').textContent = stats.inProgressOrders || 0;
-                document.getElementById('packed-orders-count').textContent = stats.packedOrders || 0;
-                document.getElementById('shipped-today-count').textContent = stats.shippedToday || 0;
+                const newOrdersEl = document.getElementById('new-orders-count');
+                const progressOrdersEl = document.getElementById('progress-orders-count');
+                const packedOrdersEl = document.getElementById('packed-orders-count');
+                const shippedTodayEl = document.getElementById('shipped-today-count');
+
+                if (newOrdersEl) newOrdersEl.textContent = stats.newOrders || 0;
+                if (progressOrdersEl) progressOrdersEl.textContent = stats.inProgressOrders || 0;
+                if (packedOrdersEl) packedOrdersEl.textContent = stats.packedOrders || 0;
+                if (shippedTodayEl) shippedTodayEl.textContent = stats.shippedToday || 0;
             }
         } catch (error) {
             // Fallback: Zeige Platzhalter
-            document.getElementById('new-orders-count').textContent = '-';
-            document.getElementById('progress-orders-count').textContent = '-';
-            document.getElementById('packed-orders-count').textContent = '-';
-            document.getElementById('shipped-today-count').textContent = '-';
+            console.log('Statistiken konnten nicht geladen werden:', error);
+            const elements = ['new-orders-count', 'progress-orders-count', 'packed-orders-count', 'shipped-today-count'];
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '-';
+            });
         }
     }
 
     // Manuelle Synchronisierung (nur für Admins)
     async function triggerSync() {
         const btn = event.target.closest('button');
+        if (!btn) return;
+
         const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisiere...';
@@ -454,9 +463,10 @@
     `;
 
         const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-
-        setTimeout(() => alertDiv.remove(), 5000);
+        if (container) {
+            container.insertBefore(alertDiv, container.firstChild);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
     }
 </script>
 </body>

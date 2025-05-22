@@ -1,0 +1,35 @@
+<!-- partials/action-buttons.ejs -->
+<div class="action-buttons-group">
+    <% if (actions.includes('start') && order.status === 'new') { %>
+        <button class="btn btn-success" onclick="quickStart('<%= order._id %>')">
+            <i class="fas fa-play"></i> Starten
+        </button>
+    <% } %>
+
+    <% if (actions.includes('continue') && order.status === 'in_progress') { %>
+        <a href="/orders/<%= order._id %>" class="btn btn-warning">
+            <i class="fas fa-play"></i> Fortsetzen
+        </a>
+    <% } %>
+
+    <% if (actions.includes('print') && (order.status === 'packed' || order.status === 'shipped')) { %>
+        <a href="/orders/<%= order._id %>/print" class="btn btn-info">
+            <i class="fas fa-print"></i> Drucken
+        </a>
+    <% } %>
+
+    <% if (actions.includes('view')) { %>
+        <a href="/orders/<%= order._id %>" class="btn btn-outline-primary">
+            <i class="fas fa-eye"></i> Details
+        </a>
+    <% } %>
+
+    <% if (actions.includes('complete') && order.status !== 'completed') { %>
+        <form action="/orders/<%= order._id %>/complete" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-success"
+                    onclick="return confirm('Auftrag wirklich abschließen?');">
+                <i class="fas fa-check-circle"></i> Abschließen
+            </button>
+        </form>
+    <% } %>
+</div>

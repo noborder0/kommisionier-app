@@ -1,0 +1,49 @@
+<!-- partials/filter-bar.ejs -->
+<div class="filter-bar">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            <i class="fas fa-<%= icon || 'list' %>"></i>
+            <%= title %>
+            <% if (count !== undefined) { %>
+                <span class="badge bg-secondary"><%= count %></span>
+            <% } %>
+        </h4>
+
+        <div class="filter-controls">
+            <% if (showSearch) { %>
+                <a href="/orders/search" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i> Suchen
+                </a>
+            <% } %>
+
+            <% if (showSync) { %>
+                <a href="/orders/sync" class="btn btn-outline-success me-2">
+                    <i class="fas fa-sync"></i> Sync
+                </a>
+            <% } %>
+
+            <% if (showBatch) { %>
+                <a href="/orders/batch" class="btn btn-primary">
+                    <i class="fas fa-layer-group"></i> Batch
+                </a>
+            <% } %>
+        </div>
+    </div>
+
+    <% if (filters && filters.length > 0) { %>
+        <div class="filter-pills">
+            <% filters.forEach(filter => { %>
+                <a href="<%= filter.url %>"
+                   class="filter-pill <%= filter.active ? 'active' : '' %>">
+                    <% if (filter.icon) { %>
+                        <i class="fas fa-<%= filter.icon %>"></i>
+                    <% } %>
+                    <%= filter.label %>
+                    <% if (filter.count !== undefined) { %>
+                        <span class="badge bg-light text-dark ms-1"><%= filter.count %></span>
+                    <% } %>
+                </a>
+            <% }) %>
+        </div>
+    <% } %>
+</div>

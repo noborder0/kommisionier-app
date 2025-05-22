@@ -9,72 +9,97 @@
     <link rel="stylesheet" href="/css/styles.css">
     <style>
         .search-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .search-header {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
-            padding: 40px;
+            padding: 3rem 2rem;
             border-radius: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.1) 20px,
+                    rgba(255,255,255,0.1) 40px
+            );
+            animation: slide 15s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .scanner-icon {
+            font-size: 4rem;
+            opacity: 0.9;
+            animation: pulse 3s infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .search-modes {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-mode {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .search-mode:hover {
+            border-color: #28a745;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .search-mode.active {
+            border-color: #28a745;
+            background: #e7f7e7;
         }
 
         .search-box {
             background: white;
-            padding: 30px;
+            padding: 2rem;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .scanner-icon {
-            font-size: 5rem;
-            opacity: 0.8;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .project-filter {
-            margin-bottom: 20px;
-        }
-
-        .project-pills {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .project-pill {
-            padding: 8px 20px;
-            background: #f8f9fa;
-            border: 2px solid #dee2e6;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .project-pill:hover {
-            background: #e9ecef;
-        }
-
-        .project-pill.active {
-            background: #6610f2;
-            color: white;
-            border-color: #6610f2;
+            margin-bottom: 2rem;
         }
 
         .scan-input {
             font-size: 1.5rem;
-            padding: 20px;
+            padding: 1rem;
             text-align: center;
             border: 3px solid #dee2e6;
             border-radius: 15px;
@@ -86,40 +111,91 @@
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
         }
 
-        .recent-searches {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
+        .scan-input.scanning {
+            border-color: #ffc107;
+            background: #fff9e6;
         }
 
-        .search-item {
-            padding: 10px 15px;
+        .scan-input.success {
+            border-color: #28a745;
+            background: #e7f7e7;
+        }
+
+        .scan-input.error {
+            border-color: #dc3545;
+            background: #fde7e7;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
             background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0 0 15px 15px;
+            border-top: none;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f8f9fa;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-searches {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .search-history-item {
+            background: white;
+            padding: 1rem;
             border-radius: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 0.5rem;
             cursor: pointer;
             transition: all 0.3s;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: between align-items-center;
         }
 
-        .search-item:hover {
+        .search-history-item:hover {
             background: #e7f3ff;
             transform: translateX(5px);
         }
 
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .action-card {
             background: white;
-            padding: 20px;
+            padding: 2rem;
             border-radius: 15px;
             text-align: center;
             border: 2px solid #e9ecef;
@@ -134,12 +210,76 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             text-decoration: none;
             color: inherit;
+            border-color: #28a745;
         }
 
         .action-icon {
             font-size: 3rem;
-            margin-bottom: 15px;
-            display: block;
+            margin-bottom: 1rem;
+        }
+
+        .filters-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .filter-pills {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .filter-pill {
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .filter-pill:hover {
+            background: #e9ecef;
+            color: #495057;
+            text-decoration: none;
+        }
+
+        .filter-pill.active {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .search-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -153,71 +293,126 @@
             <div class="scanner-icon mb-3">
                 <i class="fas fa-barcode"></i>
             </div>
-            <h1 class="display-5">Lieferschein suchen</h1>
-            <p class="lead mb-0">Scannen Sie den Barcode oder geben Sie die Nummer ein</p>
+            <h1 class="display-4 mb-2">Intelligente Suche</h1>
+            <p class="lead mb-0">Scannen, suchen oder durchsuchen Sie alle Aufträge</p>
         </div>
 
         <!-- Flash Messages -->
-        <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
-            <div class="alert alert-success alert-dismissible fade show">
-                <%= success_msg %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <% } %>
+        <%- include('../partials/flash-messages') %>
 
-        <% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <%= error_msg %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- Search Modes -->
+        <div class="search-modes">
+            <div class="search-mode active" data-mode="scan">
+                <i class="fas fa-barcode fa-2x mb-2 text-primary"></i>
+                <h6>Barcode Scan</h6>
+                <small class="text-muted">Scanner verwenden</small>
             </div>
-        <% } %>
-
-        <% if(typeof info_msg !== 'undefined' && info_msg !== '') { %>
-            <div class="alert alert-info alert-dismissible fade show">
-                <%= info_msg %>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="search-mode" data-mode="manual">
+                <i class="fas fa-keyboard fa-2x mb-2 text-success"></i>
+                <h6>Manuelle Eingabe</h6>
+                <small class="text-muted">Tippen Sie die Nummer</small>
             </div>
-        <% } %>
+            <div class="search-mode" data-mode="advanced">
+                <i class="fas fa-search-plus fa-2x mb-2 text-info"></i>
+                <h6>Erweiterte Suche</h6>
+                <small class="text-muted">Alle Felder durchsuchen</small>
+            </div>
+        </div>
 
         <!-- Search Box -->
         <div class="search-box">
             <form action="/orders/search" method="POST" id="searchForm">
-                <!-- Project Filter -->
-                <div class="project-filter">
-                    <label class="form-label">
-                        <i class="fas fa-folder"></i> Projekt-Filter (optional)
-                    </label>
-                    <div class="project-pills" id="projectPills">
-                        <div class="project-pill active" data-project="">
-                            Alle Projekte
+                <!-- Filters Section -->
+                <div class="filters-section" id="filtersSection" style="display: none;">
+                    <h6><i class="fas fa-filter"></i> Suchfilter</h6>
+                    <div class="filter-pills">
+                        <div class="filter-pill active" data-filter="">
+                            Alle Bereiche
                         </div>
-                        <!-- Projekt-Pills werden dynamisch geladen -->
+                        <div class="filter-pill" data-filter="deliveryNote">
+                            Lieferschein
+                        </div>
+                        <div class="filter-pill" data-filter="customer">
+                            Kunde
+                        </div>
+                        <div class="filter-pill" data-filter="article">
+                            Artikel
+                        </div>
+                        <div class="filter-pill" data-filter="project">
+                            Projekt
+                        </div>
                     </div>
-                    <input type="hidden" name="projectId" id="projectId" value="">
+                    <input type="hidden" name="searchField" id="searchField" value="">
                 </div>
 
-                <!-- Scanner Input -->
-                <div class="mb-4">
-                    <label for="deliveryNoteNumber" class="form-label text-center d-block mb-3">
-                        <strong>Lieferschein-Nummer oder Barcode</strong>
+                <!-- Main Search Input -->
+                <div class="position-relative mb-3">
+                    <label for="searchInput" class="form-label text-center d-block mb-3">
+                        <strong id="searchLabel">Barcode scannen oder Lieferschein-Nummer eingeben</strong>
                     </label>
                     <input type="text"
-                           id="deliveryNoteNumber"
-                           name="deliveryNoteNumber"
+                           id="searchInput"
+                           name="query"
                            class="form-control scan-input"
                            placeholder="Hier scannen oder eingeben..."
                            autocomplete="off"
                            autofocus
                            required>
-                    <div class="text-center mt-2">
-                        <small class="text-muted">
-                            Der Scanner sendet automatisch Enter nach dem Scannen
-                        </small>
+
+                    <!-- Search Suggestions -->
+                    <div class="search-suggestions" id="searchSuggestions">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Additional Search Options -->
+                <div id="advancedOptions" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status Filter</label>
+                            <select name="status" class="form-select">
+                                <option value="">Alle Status</option>
+                                <option value="new">Neu</option>
+                                <option value="in_progress">In Bearbeitung</option>
+                                <option value="packed">Verpackt</option>
+                                <option value="shipped">Versendet</option>
+                                <option value="completed">Abgeschlossen</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Projekt Filter</label>
+                            <select name="project" class="form-select">
+                                <option value="">Alle Projekte</option>
+                                <% if (projects && projects.length > 0) { %>
+                                    <% projects.forEach(project => { %>
+                                        <option value="<%= project.id %>"><%= project.name %></option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Datum von</label>
+                            <input type="date" name="dateFrom" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Datum bis</label>
+                            <input type="date" name="dateTo" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="expressOnly" id="expressOnly">
+                        <label class="form-check-label" for="expressOnly">
+                            Nur Express-Aufträge
+                        </label>
                     </div>
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg">
+                    <button type="submit" class="btn btn-success btn-lg" id="searchButton">
                         <i class="fas fa-search"></i> Suchen
                     </button>
                 </div>
@@ -228,36 +423,59 @@
         <div class="recent-searches" id="recentSearches" style="display: none;">
             <h5 class="mb-3">
                 <i class="fas fa-history"></i> Letzte Suchen
+                <button class="btn btn-sm btn-outline-secondary float-end" onclick="clearSearchHistory()">
+                    <i class="fas fa-trash"></i> Löschen
+                </button>
             </h5>
             <div id="recentSearchesList">
-                <!-- Wird dynamisch gefüllt -->
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Search Statistics -->
+        <div class="search-stats">
+            <div class="stat-box">
+                <div class="stat-value" id="totalOrdersCount">-</div>
+                <div class="stat-label">Aufträge gesamt</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="newOrdersCount">-</div>
+                <div class="stat-label">Neue Aufträge</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="expressOrdersCount">-</div>
+                <div class="stat-label">Express-Aufträge</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="projectsCount">-</div>
+                <div class="stat-label">Aktive Projekte</div>
             </div>
         </div>
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <a href="/orders/projects" class="action-card">
-                <span class="action-icon text-primary">
-                    <i class="fas fa-folder-open"></i>
-                </span>
-                <h5>Projekte</h5>
-                <p class="text-muted mb-0">Nach Projekt suchen</p>
-            </a>
-
             <a href="/orders" class="action-card">
-                <span class="action-icon text-success">
+                <span class="action-icon text-primary">
                     <i class="fas fa-list"></i>
                 </span>
                 <h5>Alle Aufträge</h5>
-                <p class="text-muted mb-0">Auftrags-Übersicht</p>
+                <p class="text-muted mb-0">Auftragsübersicht</p>
             </a>
 
-            <a href="/orders/batch-pick" class="action-card">
-                <span class="action-icon text-warning">
-                    <i class="fas fa-boxes"></i>
+            <a href="/orders/batch" class="action-card">
+                <span class="action-icon text-success">
+                    <i class="fas fa-layer-group"></i>
                 </span>
                 <h5>Batch-Picking</h5>
                 <p class="text-muted mb-0">Mehrere Aufträge</p>
+            </a>
+
+            <a href="/orders?express=true" class="action-card">
+                <span class="action-icon text-danger">
+                    <i class="fas fa-rocket"></i>
+                </span>
+                <h5>Express-Aufträge</h5>
+                <p class="text-muted mb-0">Dringende Aufträge</p>
             </a>
 
             <a href="/orders/sync" class="action-card">
@@ -269,168 +487,368 @@
             </a>
         </div>
 
-        <!-- Scanner Info -->
+        <!-- Help Section -->
         <div class="alert alert-info">
-            <h5><i class="fas fa-info-circle"></i> Scanner-Tipps</h5>
-            <ul class="mb-0">
-                <li>Halten Sie den Scanner 10-15cm vom Barcode entfernt</li>
-                <li>Der Cursor muss im Eingabefeld sein</li>
-                <li>Nach dem Scannen wird automatisch gesucht</li>
-                <li>Sie können auch Artikel-Barcodes scannen</li>
-            </ul>
+            <h5><i class="fas fa-lightbulb"></i> Such-Tipps</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li><strong>Barcode-Scanner:</strong> Einfach scannen - automatische Erkennung</li>
+                        <li><strong>Lieferschein:</strong> Vollständige oder teilweise Nummer</li>
+                        <li><strong>Kunde:</strong> Firmenname oder Kundennummer</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li><strong>Artikel:</strong> SKU, Artikelnummer oder Beschreibung</li>
+                        <li><strong>Projekt:</strong> Projekt-ID oder Projektname</li>
+                        <li><strong>Platzhalter:</strong> * für beliebige Zeichen verwenden</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    let searchMode = 'scan';
     let scanBuffer = '';
     let lastInputTime = 0;
     const scanThreshold = 100;
 
-    // Lade verfügbare Projekte
-    async function loadProjects() {
-        try {
-            const response = await fetch('/api/projects');
-            if (response.ok) {
-                const projects = await response.json();
-                displayProjects(projects);
-            }
-        } catch (error) {
-            console.error('Fehler beim Laden der Projekte:', error);
-        }
-    }
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSearchHistory();
+        loadSearchStats();
+        setupEventListeners();
+        autoFocusInput();
+    });
 
-    function displayProjects(projects) {
-        const container = document.getElementById('projectPills');
-        // Behalte "Alle Projekte" Pill
-        const allPill = container.querySelector('[data-project=""]');
-
-        projects.forEach(project => {
-            const pill = document.createElement('div');
-            pill.className = 'project-pill';
-            pill.dataset.project = project.id;
-            pill.innerHTML = `
-                <i class="fas fa-folder me-1"></i>
-                ${project.name}
-                <span class="badge bg-secondary ms-2">${project.orderCount || 0}</span>
-            `;
-            pill.addEventListener('click', () => selectProject(project.id));
-            container.appendChild(pill);
+    // Setup event listeners
+    function setupEventListeners() {
+        // Search mode switching
+        document.querySelectorAll('.search-mode').forEach(mode => {
+            mode.addEventListener('click', function() {
+                switchSearchMode(this.dataset.mode);
+            });
         });
+
+        // Filter pills
+        document.querySelectorAll('.filter-pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                selectFilter(this.dataset.filter);
+            });
+        });
+
+        // Search input
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', handleSearchInput);
+        searchInput.addEventListener('keypress', handleKeyPress);
+        searchInput.addEventListener('focus', () => {
+            searchInput.classList.add('scanning');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.classList.remove('scanning');
+            setTimeout(() => {
+                document.getElementById('searchSuggestions').style.display = 'none';
+            }, 200);
+        });
+
+        // Form submission
+        document.getElementById('searchForm').addEventListener('submit', handleSearchSubmit);
     }
 
-    function selectProject(projectId) {
+    // Search mode switching
+    function switchSearchMode(mode) {
+        searchMode = mode;
+
         // Update active state
-        document.querySelectorAll('.project-pill').forEach(pill => {
+        document.querySelectorAll('.search-mode').forEach(m => m.classList.remove('active'));
+        document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+        // Update UI based on mode
+        const filtersSection = document.getElementById('filtersSection');
+        const advancedOptions = document.getElementById('advancedOptions');
+        const searchLabel = document.getElementById('searchLabel');
+        const searchInput = document.getElementById('searchInput');
+
+        switch(mode) {
+            case 'scan':
+                filtersSection.style.display = 'none';
+                advancedOptions.style.display = 'none';
+                searchLabel.textContent = 'Barcode scannen';
+                searchInput.placeholder = 'Bereit zum Scannen...';
+                break;
+            case 'manual':
+                filtersSection.style.display = 'block';
+                advancedOptions.style.display = 'none';
+                searchLabel.textContent = 'Lieferschein-Nummer oder Suchbegriff eingeben';
+                searchInput.placeholder = 'z.B. LS123456 oder Firmenname...';
+                break;
+            case 'advanced':
+                filtersSection.style.display = 'block';
+                advancedOptions.style.display = 'block';
+                searchLabel.textContent = 'Erweiterte Suche - alle Filter verwenden';
+                searchInput.placeholder = 'Suchbegriff eingeben...';
+                break;
+        }
+
+        searchInput.focus();
+    }
+
+    // Filter selection
+    function selectFilter(filter) {
+        document.querySelectorAll('.filter-pill').forEach(pill => {
             pill.classList.remove('active');
         });
 
-        const selectedPill = document.querySelector(`[data-project="${projectId}"]`);
-        if (selectedPill) {
-            selectedPill.classList.add('active');
-        }
-
-        // Update hidden input
-        document.getElementById('projectId').value = projectId;
+        document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+        document.getElementById('searchField').value = filter;
     }
 
-    // Scanner-Logik
-    document.getElementById('deliveryNoteNumber').addEventListener('input', function(e) {
-        const currentTime = Date.now();
-
-        if (currentTime - lastInputTime > scanThreshold) {
-            scanBuffer = '';
+    // Search input handling
+    function handleSearchInput(e) {
+        if (searchMode === 'scan') {
+            const currentTime = Date.now();
+            if (currentTime - lastInputTime > scanThreshold) {
+                scanBuffer = '';
+            }
+            scanBuffer += e.data || '';
+            lastInputTime = currentTime;
         }
 
-        scanBuffer += e.data || '';
-        lastInputTime = currentTime;
-    });
-
-    document.getElementById('deliveryNoteNumber').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && this.value.trim()) {
-            // Speichere in Recent Searches
-            addToRecentSearches(this.value.trim());
+        // Show suggestions for manual/advanced modes
+        if (searchMode !== 'scan' && e.target.value.length >= 2) {
+            loadSuggestions(e.target.value);
         }
-    });
+    }
 
-    // Recent Searches
-    function loadRecentSearches() {
-        const searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+
+            if (searchMode === 'scan' && scanBuffer) {
+                e.target.value = scanBuffer;
+                scanBuffer = '';
+            }
+
+            if (e.target.value.trim()) {
+                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            }
+        }
+    }
+
+    // Form submission
+    function handleSearchSubmit(e) {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) {
+            e.preventDefault();
+            showNotification('Bitte geben Sie einen Suchbegriff ein.', 'warning');
+            return;
+        }
+
+        // Add to search history
+        addToSearchHistory(query);
+
+        // Show loading state
+        const searchButton = document.getElementById('searchButton');
+        const originalText = searchButton.innerHTML;
+        searchButton.disabled = true;
+        searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Suche...';
+
+        // Form will submit normally, button state will reset on page load
+    }
+
+    // Search suggestions
+    async function loadSuggestions(query) {
+        try {
+            const response = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+            if (response.ok) {
+                const suggestions = await response.json();
+                displaySuggestions(suggestions);
+            }
+        } catch (error) {
+            console.error('Error loading suggestions:', error);
+        }
+    }
+
+    function displaySuggestions(suggestions) {
+        const container = document.getElementById('searchSuggestions');
+
+        if (suggestions.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+        suggestions.forEach(suggestion => {
+            html += `
+                <div class="suggestion-item" onclick="selectSuggestion('${suggestion.value}', '${suggestion.type}')">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${suggestion.value}</strong>
+                            <small class="text-muted d-block">${suggestion.description}</small>
+                        </div>
+                        <span class="badge bg-secondary">${suggestion.type}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    function selectSuggestion(value, type) {
+        document.getElementById('searchInput').value = value;
+        document.getElementById('searchSuggestions').style.display = 'none';
+
+        // Automatically set filter based on suggestion type
+        if (type === 'customer') {
+            selectFilter('customer');
+        } else if (type === 'article') {
+            selectFilter('article');
+        } else if (type === 'project') {
+            selectFilter('project');
+        }
+
+        // Auto-submit if it's a complete match
+        if (type === 'deliveryNote') {
+            document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+        }
+    }
+
+    // Search history
+    function loadSearchHistory() {
+        const searches = JSON.parse(localStorage.getItem('searchHistory') || '[]');
         if (searches.length > 0) {
-            displayRecentSearches(searches);
+            displaySearchHistory(searches);
             document.getElementById('recentSearches').style.display = 'block';
         }
     }
 
-    function addToRecentSearches(searchTerm) {
-        let searches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+    function addToSearchHistory(query) {
+        let searches = JSON.parse(localStorage.getItem('searchHistory') || '[]');
 
-        // Entferne Duplikate
-        searches = searches.filter(s => s !== searchTerm);
+        // Remove duplicates
+        searches = searches.filter(s => s.query !== query);
 
-        // Füge am Anfang hinzu
-        searches.unshift(searchTerm);
+        // Add new search at the beginning
+        searches.unshift({
+            query: query,
+            timestamp: new Date().toISOString(),
+            mode: searchMode
+        });
 
-        // Behalte nur die letzten 5
-        searches = searches.slice(0, 5);
+        // Keep only last 10
+        searches = searches.slice(0, 10);
 
-        localStorage.setItem('recentSearches', JSON.stringify(searches));
+        localStorage.setItem('searchHistory', JSON.stringify(searches));
     }
 
-    function displayRecentSearches(searches) {
+    function displaySearchHistory(searches) {
         const container = document.getElementById('recentSearchesList');
-        container.innerHTML = '';
+        let html = '';
 
         searches.forEach(search => {
-            const item = document.createElement('div');
-            item.className = 'search-item';
-            item.innerHTML = `
-                <span>
-                    <i class="fas fa-clock me-2"></i>
-                    ${search}
-                </span>
-                <button class="btn btn-sm btn-outline-primary" onclick="searchFor('${search}')">
-                    <i class="fas fa-search"></i>
-                </button>
+            const date = new Date(search.timestamp).toLocaleDateString('de-DE');
+            html += `
+                <div class="search-history-item" onclick="repeatSearch('${search.query}', '${search.mode}')">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${search.query}</strong>
+                            <small class="text-muted d-block">Modus: ${search.mode}</small>
+                        </div>
+                        <small class="text-muted">${date}</small>
+                    </div>
+                </div>
             `;
-            container.appendChild(item);
         });
+
+        container.innerHTML = html;
     }
 
-    function searchFor(term) {
-        document.getElementById('deliveryNoteNumber').value = term;
-        document.getElementById('searchForm').submit();
+    function repeatSearch(query, mode) {
+        switchSearchMode(mode);
+        document.getElementById('searchInput').value = query;
+        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
     }
 
-    // Initialisierung
-    document.addEventListener('DOMContentLoaded', function() {
-        loadProjects();
-        loadRecentSearches();
+    function clearSearchHistory() {
+        if (confirm('Suchverlauf wirklich löschen?')) {
+            localStorage.removeItem('searchHistory');
+            document.getElementById('recentSearches').style.display = 'none';
+        }
+    }
 
-        // Auto-Focus
-        document.getElementById('deliveryNoteNumber').focus();
-    });
+    // Search statistics
+    async function loadSearchStats() {
+        try {
+            const response = await fetch('/api/search/stats');
+            if (response.ok) {
+                const stats = await response.json();
+                document.getElementById('totalOrdersCount').textContent = stats.totalOrders || 0;
+                document.getElementById('newOrdersCount').textContent = stats.newOrders || 0;
+                document.getElementById('expressOrdersCount').textContent = stats.expressOrders || 0;
+                document.getElementById('projectsCount').textContent = stats.activeProjects || 0;
+            }
+        } catch (error) {
+            console.error('Error loading search stats:', error);
+        }
+    }
 
-    // Projekt-Pills Click Handler
-    document.querySelectorAll('.project-pill').forEach(pill => {
-        pill.addEventListener('click', function() {
-            selectProject(this.dataset.project);
-        });
-    });
+    // Auto-focus input
+    function autoFocusInput() {
+        const searchInput = document.getElementById('searchInput');
+        searchInput.focus();
 
-    // Keyboard Shortcuts
+        // Re-focus periodically
+        setInterval(() => {
+            if (document.activeElement !== searchInput && !document.querySelector('.modal.show')) {
+                searchInput.focus();
+            }
+        }, 3000);
+    }
+
+    // Utility functions
+    function showNotification(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' :
+            type === 'warning' ? 'alert-warning' : 'alert-danger';
+
+        const notification = document.createElement('div');
+        notification.className = `alert ${alertClass} position-fixed top-0 start-50 translate-middle-x mt-3`;
+        notification.style.zIndex = '9999';
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+
+    // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-        // F2 = Focus auf Scanner
+        // F2 = Focus search
         if (e.key === 'F2') {
             e.preventDefault();
-            document.getElementById('deliveryNoteNumber').focus();
+            document.getElementById('searchInput').focus();
         }
 
-        // Escape = Clear
+        // F3 = Switch to advanced mode
+        if (e.key === 'F3') {
+            e.preventDefault();
+            switchSearchMode('advanced');
+        }
+
+        // Escape = Clear and focus
         if (e.key === 'Escape') {
-            document.getElementById('deliveryNoteNumber').value = '';
-            document.getElementById('deliveryNoteNumber').focus();
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').focus();
         }
     });
 </script>
