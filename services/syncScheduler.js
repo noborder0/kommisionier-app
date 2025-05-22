@@ -10,6 +10,7 @@ class SyncScheduler {
         this.interval = null;
         this.syncIntervalMinutes = 1; // Standard: 1 Minute
         this.lastSyncTime = null;
+        this.isSyncing = false;
         this.stats = {
             totalSyncs: 0,
             successfulSyncs: 0,
@@ -77,6 +78,7 @@ class SyncScheduler {
         try {
             console.log(`[${startTime.toISOString()}] Starte automatische Synchronisierung...`);
 
+            // Rufe die autoSync Methode des Controllers auf
             const result = await this.controller.autoSync();
 
             this.stats.totalSyncs++;
@@ -84,7 +86,7 @@ class SyncScheduler {
             if (result.success) {
                 this.stats.successfulSyncs++;
                 this.lastSyncTime = startTime;
-                console.log(`[${startTime.toISOString()}] Synchronisierung erfolgreich: ${result.synced} Lieferscheine`);
+                console.log(`[${startTime.toISOString()}] Synchronisierung erfolgreich: ${result.synced} Lieferscheine (${result.new || 0} neu, ${result.updated || 0} aktualisiert)`);
             } else {
                 this.stats.failedSyncs++;
                 this.stats.lastError = result.error;
@@ -110,7 +112,7 @@ class SyncScheduler {
         return {
             ...this.stats,
             isRunning: this.isRunning,
-            isSyncing: this.isSyncing || false,
+            isSyncing: this.isSyncing,
             syncIntervalMinutes: this.syncIntervalMinutes,
             lastSyncTime: this.lastSyncTime,
             nextSyncTime: this.isRunning && this.lastSyncTime ?

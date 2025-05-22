@@ -7,158 +7,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
-    <style>
-        .quick-action-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .action-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .action-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .action-card.express {
-            border-color: #dc3545;
-            background: linear-gradient(135deg, #fff 0%, #fee 100%);
-        }
-
-        .action-card.batch {
-            border-color: #0d6efd;
-            background: linear-gradient(135deg, #fff 0%, #e7f3ff 100%);
-        }
-
-        .action-card.search {
-            border-color: #28a745;
-            background: linear-gradient(135deg, #fff 0%, #e7ffe7 100%);
-        }
-
-        .action-card.sync {
-            border-color: #6610f2;
-            background: linear-gradient(135deg, #fff 0%, #f3e7ff 100%);
-        }
-
-        .action-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .action-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .action-description {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        .stats-bar {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 10px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #6c757d;
-            text-transform: uppercase;
-        }
-
-        .filter-tabs {
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            padding: 10px 20px;
-            margin: 0 5px;
-            border-radius: 20px;
-            transition: all 0.3s;
-        }
-
-        .nav-tabs .nav-link:hover {
-            background: #f8f9fa;
-        }
-
-        .nav-tabs .nav-link.active {
-            background: #0d6efd;
-            color: white;
-        }
-
-        .badge-counter {
-            background: #dc3545;
-            color: white;
-            font-size: 0.75rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: 5px;
-        }
-
-        .order-row:hover {
-            background: #f8f9fa;
-        }
-
-        .priority-indicator {
-            width: 5px;
-            height: 40px;
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            border-radius: 0 3px 3px 0;
-        }
-
-        .priority-high {
-            background: #dc3545;
-        }
-
-        .priority-normal {
-            background: #28a745;
-        }
-    </style>
 </head>
 <body>
 <%- include('../partials/navbar') %>
 
 <div class="container mt-4">
-    <!-- Flash Messages -->
+    <!-- Flash-Nachrichten -->
     <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
         <div class="alert alert-success alert-dismissible fade show">
             <%= success_msg %>
@@ -173,188 +27,62 @@
         </div>
     <% } %>
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-clipboard-list"></i> Auftragsübersicht</h1>
-        <div>
-            <button class="btn btn-outline-primary me-2" onclick="location.reload()">
-                <i class="fas fa-sync"></i> Aktualisieren
-            </button>
-            <a href="/orders/sync" class="btn btn-primary">
-                <i class="fas fa-download"></i> Synchronisieren
-            </a>
-        </div>
-    </div>
-
-    <!-- Quick Action Cards -->
-    <div class="quick-action-cards">
-        <a href="/orders/express" class="action-card express">
-            <span class="action-icon">🚀</span>
-            <div class="action-title">Express-Dashboard</div>
-            <div class="action-description">
-                <% if (stats && stats.urgent > 0) { %>
-                    <span class="badge bg-danger"><%= stats.urgent %> dringend</span>
-                <% } else { %>
-                    Zeitkritische Aufträge verwalten
-                <% } %>
-            </div>
-        </a>
-
-        <a href="/orders/batch-pick" class="action-card batch">
-            <span class="action-icon">📦</span>
-            <div class="action-title">Batch-Picking</div>
-            <div class="action-description">
-                Mehrere Aufträge gleichzeitig kommissionieren
-            </div>
-        </a>
-
-        <a href="/orders/search" class="action-card search">
-            <span class="action-icon">🔍</span>
-            <div class="action-title">Schnellsuche</div>
-            <div class="action-description">
-                Lieferschein scannen oder suchen
-            </div>
-        </a>
-
-        <a href="/settings" class="action-card sync">
-            <span class="action-icon">⚙️</span>
-            <div class="action-title">Einstellungen</div>
-            <div class="action-description">
-                System konfigurieren
-            </div>
-        </a>
-    </div>
-
-    <!-- Statistics Bar -->
-    <% if (stats) { %>
-        <div class="stats-bar">
-            <div class="row">
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-primary"><%= stats.total %></span>
-                        <span class="stat-label">Gesamt</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-secondary"><%= stats.new %></span>
-                        <span class="stat-label">Neu</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-warning"><%= stats.inProgress %></span>
-                        <span class="stat-label">In Arbeit</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-danger"><%= stats.urgent %></span>
-                        <span class="stat-label">Dringend</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-info">
-                            <%= orders.filter(o => o.status === 'packed').length %>
-                        </span>
-                        <span class="stat-label">Verpackt</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-value text-success">
-                            <%= orders.filter(o => o.status === 'shipped').length %>
-                        </span>
-                        <span class="stat-label">Versendet</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <% } %>
-
-    <!-- Orders Table -->
     <div class="card">
-        <div class="card-header bg-white">
-            <!-- Filter Tabs -->
-            <ul class="nav nav-tabs card-header-tabs">
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'all' ? 'active' : '' %>" href="/orders">
-                        Alle
-                        <% if (stats) { %>
-                            <span class="badge-counter"><%= stats.total %></span>
-                        <% } %>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'new' ? 'active' : '' %>" href="/orders?status=new">
-                        Neu
-                        <% if (stats && stats.new > 0) { %>
-                            <span class="badge-counter"><%= stats.new %></span>
-                        <% } %>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'in_progress' ? 'active' : '' %>" href="/orders?status=in_progress">
-                        In Bearbeitung
-                        <% if (stats && stats.inProgress > 0) { %>
-                            <span class="badge-counter"><%= stats.inProgress %></span>
-                        <% } %>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'packed' ? 'active' : '' %>" href="/orders?status=packed">
-                        Verpackt
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'shipped' ? 'active' : '' %>" href="/orders?status=shipped">
-                        Versendet
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <%= activeStatus === 'completed' ? 'active' : '' %>" href="/orders?status=completed">
-                        Abgeschlossen
-                    </a>
-                </li>
-            </ul>
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2>Aufträge</h2>
+            <div>
+                <a href="/orders/search" class="btn btn-light me-2">
+                    <i class="fas fa-search"></i> Lieferschein suchen
+                </a>
+                <a href="/orders/sync" class="btn btn-success">
+                    <i class="fas fa-sync"></i> Synchronisieren
+                </a>
+            </div>
         </div>
 
         <div class="card-body">
+            <!-- Filter-Tabs -->
+            <ul class="nav nav-tabs mb-4">
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'all' ? 'active' : '' %>" href="/orders">Alle</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'new' ? 'active' : '' %>" href="/orders?status=new">Neu</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'in_progress' ? 'active' : '' %>" href="/orders?status=in_progress">In Bearbeitung</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'packed' ? 'active' : '' %>" href="/orders?status=packed">Verpackt</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'shipped' ? 'active' : '' %>" href="/orders?status=shipped">Versendet</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <%= activeStatus === 'completed' ? 'active' : '' %>" href="/orders?status=completed">Abgeschlossen</a>
+                </li>
+            </ul>
+
+            <!-- Auftragsliste -->
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
                     <tr>
-                        <th style="width: 40px"></th>
                         <th>Lieferschein-Nr.</th>
                         <th>Auftrags-Nr.</th>
                         <th>Kunde</th>
-                        <th>Artikel</th>
-                        <th>Erstellt</th>
+                        <th>Erstellt am</th>
                         <th>Status</th>
-                        <th>Zugewiesen</th>
-                        <th style="width: 150px">Aktionen</th>
+                        <th>Zugewiesen an</th>
+                        <th>Aktionen</th>
                     </tr>
                     </thead>
                     <tbody>
                     <% if (orders && orders.length > 0) { %>
                         <% orders.forEach(order => { %>
-                            <%
-                                const isUrgent = order.priority === 'high' ||
-                                        (order.shippingDeadline &&
-                                                (new Date(order.shippingDeadline) - new Date()) < 4 * 60 * 60 * 1000);
-                            %>
-                            <tr class="order-row position-relative">
-                                <td>
-                                    <% if (isUrgent) { %>
-                                        <div class="priority-indicator priority-high"></div>
-                                    <% } %>
-                                </td>
+                            <tr>
                                 <td>
                                     <strong><%= order.deliveryNoteNumber %></strong>
-                                    <% if (isUrgent) { %>
-                                        <span class="badge bg-danger ms-2">Express</span>
-                                    <% } %>
                                 </td>
                                 <td><%= order.orderNumber || '-' %></td>
                                 <td>
@@ -364,27 +92,15 @@
                                             <br><small class="text-muted"><%= order.customer.city %></small>
                                         <% } %>
                                     <% } else { %>
-                                        -
+                                        <span class="text-muted">-</span>
                                     <% } %>
                                 </td>
                                 <td>
-                                    <% if (order.items && order.items.length > 0) { %>
-                                        <span class="badge bg-secondary">
-                                                <%= order.items.length %> Artikel
-                                            </span>
-                                        <span class="badge bg-light text-dark">
-                                                <%= order.items.reduce((sum, item) => sum + (item.quantity || 0), 0) %> Stk
-                                            </span>
-                                    <% } else { %>
-                                        -
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <%= order.createdAt ? order.createdAt.toLocaleDateString('de-DE') : '-' %>
                                     <% if (order.createdAt) { %>
-                                        <br><small class="text-muted">
-                                            <%= order.createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %>
-                                        </small>
+                                        <%= order.createdAt.toLocaleDateString('de-DE') %>
+                                        <br><small class="text-muted"><%= order.createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %></small>
+                                    <% } else { %>
+                                        <span class="text-muted">-</span>
                                     <% } %>
                                 </td>
                                 <td>
@@ -398,39 +114,35 @@
                                         <span class="badge bg-primary">Versendet</span>
                                     <% } else if (order.status === 'completed') { %>
                                         <span class="badge bg-success">Abgeschlossen</span>
+                                    <% } else if (order.status === 'cancelled') { %>
+                                        <span class="badge bg-danger">Storniert</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= order.status %></span>
                                     <% } %>
                                 </td>
                                 <td>
-                                    <% if (order.assignedTo) { %>
-                                        <i class="fas fa-user text-muted"></i> <%= order.assignedTo.name %>
+                                    <% if (order.assignedTo && order.assignedTo.name) { %>
+                                        <%= order.assignedTo.name %>
                                     <% } else { %>
                                         <span class="text-muted">-</span>
                                     <% } %>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="/orders/<%= order._id %>"
-                                           class="btn btn-outline-primary"
-                                           title="Details">
+                                        <a href="/orders/<%= order._id %>" class="btn btn-outline-primary" title="Details anzeigen">
                                             <i class="fas fa-eye"></i>
                                         </a>
 
                                         <% if (order.status === 'new') { %>
-                                            <button class="btn btn-outline-success"
-                                                    title="Schnellstart"
-                                                    onclick="quickStart('<%= order._id %>')">
+                                            <a href="/orders/<%= order._id %>" class="btn btn-outline-success" title="Kommissionierung starten">
                                                 <i class="fas fa-play"></i>
-                                            </button>
+                                            </a>
                                         <% } else if (order.status === 'in_progress') { %>
-                                            <a href="/orders/<%= order._id %>"
-                                               class="btn btn-outline-warning"
-                                               title="Fortsetzen">
+                                            <a href="/orders/<%= order._id %>" class="btn btn-outline-warning" title="Kommissionierung fortsetzen">
                                                 <i class="fas fa-box-open"></i>
                                             </a>
                                         <% } else if (order.status === 'packed') { %>
-                                            <a href="/orders/<%= order._id %>/print"
-                                               class="btn btn-outline-info"
-                                               title="Drucken">
+                                            <a href="/orders/<%= order._id %>/print" class="btn btn-outline-info" title="Drucken">
                                                 <i class="fas fa-print"></i>
                                             </a>
                                         <% } %>
@@ -440,81 +152,72 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="9" class="text-center py-5">
-                                <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">Keine Aufträge gefunden</p>
-                                <a href="/orders/sync" class="btn btn-primary">
-                                    <i class="fas fa-sync"></i> Jetzt synchronisieren
-                                </a>
+                                <% if (activeStatus !== 'all') { %>
+                                    <a href="/orders" class="btn btn-sm btn-primary">Alle Aufträge anzeigen</a>
+                                <% } else { %>
+                                    <a href="/orders/sync" class="btn btn-sm btn-success">
+                                        <i class="fas fa-sync"></i> Mit No Border synchronisieren
+                                    </a>
+                                <% } %>
                             </td>
                         </tr>
                     <% } %>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Zusammenfassung -->
+            <% if (orders && orders.length > 0) { %>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="text-muted">
+                            Zeige <%= orders.length %> Auftrag/Aufträge
+                            <% if (activeStatus && activeStatus !== 'all') { %>
+                                mit Status "<%= activeStatus.replace('_', ' ') %>"
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    // Quick Start Function
-    async function quickStart(orderId) {
-        if (!confirm('Auftrag mit automatischer Verpackungserkennung starten?')) return;
-
-        try {
-            const response = await fetch(`/orders/${orderId}/auto-pack`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Highlight aktuelle Zeile beim Hover
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f8f9fa';
             });
+            row.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
 
-            const result = await response.json();
-
-            if (result.success) {
-                window.location.href = `/orders/${orderId}`;
-            } else {
-                alert('Fehler: ' + (result.error || 'Unbekannter Fehler'));
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'f':
+                    case 'F':
+                        e.preventDefault();
+                        window.location.href = '/orders/search';
+                        break;
+                    case 'r':
+                    case 'R':
+                        e.preventDefault();
+                        window.location.href = '/orders/sync';
+                        break;
+                }
             }
-        } catch (error) {
-            console.error('Fehler beim Schnellstart:', error);
-            alert('Fehler beim Starten des Auftrags');
-        }
-    }
-
-    // Auto-refresh every 60 seconds
-    setInterval(() => {
-        if (!document.querySelector('.modal.show')) {
-            location.reload();
-        }
-    }, 60000);
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // F5 = Refresh
-        if (e.key === 'F5') {
-            e.preventDefault();
-            location.reload();
-        }
-
-        // Ctrl+E = Express Dashboard
-        if (e.ctrlKey && e.key === 'e') {
-            e.preventDefault();
-            window.location.href = '/orders/express';
-        }
-
-        // Ctrl+B = Batch Picking
-        if (e.ctrlKey && e.key === 'b') {
-            e.preventDefault();
-            window.location.href = '/orders/batch-pick';
-        }
-
-        // Ctrl+F = Search
-        if (e.ctrlKey && e.key === 'f') {
-            e.preventDefault();
-            window.location.href = '/orders/search';
-        }
+        });
     });
 </script>
 </body>
