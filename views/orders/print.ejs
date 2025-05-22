@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Kommissionier-App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .print-section {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+        }
+
+        .print-section.active {
+            border-color: #0d6efd;
+            background: #e7f3ff;
+        }
+
+        .print-preview {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .label-preview {
+            border: 2px dashed #6c757d;
+            padding: 20px;
+            text-align: center;
+            background: white;
+            margin: 10px 0;
+        }
+
+        .barcode-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        .progress-tracker {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-section {
+                page-break-inside: avoid;
+                border: none;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary no-print">
+    <div class="container">
+        <a class="navbar-brand" href="/">Kommissionier-App</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/orders">Aufträge</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> <%= user.name %>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <% if (user.role === 'admin') { %>
+                            <li><a class="dropdown-item" href="/auth/register">Benutzer registrieren</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                        <% } %>
+                        <li><a class="dropdown-item" href="/auth/logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Flash-Nachrichten -->
+    <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
+        <div class="alert alert-success alert-dismissible fade show no-print">
+            <%= success_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
+        <div class="alert alert-danger alert-dismissible fade show no-print">
+            <%= error_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <!-- Progress Tracker -->
+    <div class="progress-tracker no-print">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle"></i> Kommissionierung abgeschlossen: <%= order.deliveryNoteNumber %>
+                        </h5>
+                        <small>Alle Artikel wurden erfolgreich kommissioniert. Wählen Sie die gewünschten Druckoptionen.</small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-light btn-sm" onclick="window.print()">
+                            <i class="fas fa-print"></i> Alles drucken
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hauptinhalt -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2><i class="fas fa-print"></i> Druckoptionen für Lieferschein <%= order.deliveryNoteNumber %></h2>
+                </div>
+                <div class="card-body">
+
+                    <!-- 1. Lieferschein -->
+                    <div class="print-section" id="delivery-note-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="fas fa-file-invoice"></i> 1. Lieferschein</h4>
+                            <div>
+                                <button class="btn btn-outline-primary btn-sm" onclick="printSection('delivery-note')">
+                                    <i class="fas fa-print"></i> Einzeln drucken
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="generateDeliveryNotePDF()">
+                                    <i class="fas fa-file-pdf"></i> PDF generieren
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="print-preview" id="delivery-note-preview">
+                            <div class="text-center mb-3">
+                                <h3>LIEFERSCHEIN</h3>
+                                <strong>Nr: <%= order.deliveryNoteNumber %></strong>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Datum:</strong> <%= order.documentDate ? order.documentDate.toLocaleDateString('de-DE') : new Date().toLocaleDateString('de-DE') %><br>
+                                    <% if (order.orderNumber) { %>
+                                        <strong>Auftrags-Nr:</strong> <%= order.orderNumber %><br>
+                                    <% } %>
+                                    <% if (order.warehouse) { %>
+                                        <strong>Lager:</strong> <%= order.warehouse %><br>
+                                    <% } %>
+                                </div>
+                                <div class="col-6">
+                                    <% if (order.customer && order.customer.name) { %>
+                                        <strong>Kunde:</strong><br>
+                                        <%= order.customer.name %><br>
+                                        <% if (order.customer.street) { %><%= order.customer.street %><br><% } %>
+                                        <% if (order.customer.zip || order.customer.city) { %>
+                                            <%= order.customer.zip || '' %> <%= order.customer.city || '' %><br>
+                                        <% } %>
+                                        <% if (order.customer.country) { %><%= order.customer.country %><br><% } %>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Artikel-Nr</th>
+                                    <th>Beschreibung</th>
+                                    <th>Menge</th>
+                                    <th>Einheit</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <% if (order.items && order.items.length > 0) { %>
+                                    <% order.items.forEach((item, index) => { %>
+                                        <tr>
+                                            <td><%= item.position || index + 1 %></td>
+                                            <td><%= item.articleNumber || item.sku || '-' %></td>
+                                            <td><%= item.description || item.productName || '-' %></td>
+                                            <td><%= item.quantityPicked || item.quantity || 0 %></td>
+                                            <td><%= item.unit || 'Stk' %></td>
+                                        </tr>
+                                    <% }); %>
+                                <% } %>
+                                </tbody>
+                            </table>
+
+                            <div class="mt-3">
+                                <small>
+                                    Kommissioniert von: <%= user.name %> am <%= new Date().toLocaleString('de-DE') %><br>
+                                    <% if (order.assignedTo && order.assignedTo.name) { %>
+                                        Zugewiesen an: <%= order.assignedTo.name %><br>
+                                    <% } %>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Packstück-Etiketten -->
+                    <div class="print-section" id="package-labels-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="fas fa-tags"></i> 2. Packstück-Etiketten</h4>
+                            <div>
+                                <button class="btn btn-outline-primary btn-sm" onclick="printSection('package-labels')">
+                                    <i class="fas fa-print"></i> Einzeln drucken
+                                </button>
+                                <div class="btn-group btn-group-sm ms-2">
+                                    <input type="number" id="package-count" class="form-control" value="1" min="1" max="10" style="width: 60px;">
+                                    <label class="input-group-text">Packstücke</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="package-labels-container">
+                            <!-- Wird dynamisch gefüllt -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Versand-Label -->
+                    <div class="print-section" id="shipping-label-section">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4><i class="fas fa-shipping-fast"></i> 3. Versand-Label</h4>
+                            <div>
+                                <select id="carrier-select" class="form-select form-select-sm me-2" style="width: auto; display: inline-block;">
+                                    <option value="dhl">DHL</option>
+                                    <option value="dpd">DPD</option>
+                                    <option value="ups">UPS</option>
+                                    <option value="fedex">FedEx</option>
+                                    <option value="gls">GLS</option>
+                                    <option value="hermes">Hermes</option>
+                                </select>
+                                <button class="btn btn-outline-primary btn-sm" onclick="printSection('shipping-label')">
+                                    <i class="fas fa-print"></i> Einzeln drucken
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="generateShippingLabel()">
+                                    <i class="fas fa-truck"></i> Live-Label generieren
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="print-preview" id="shipping-label-preview">
+                            <div class="label-preview">
+                                <h5>VERSAND-LABEL</h5>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <strong>VON:</strong><br>
+                                        <small>
+                                            Ihr Firmenname<br>
+                                            Ihre Straße 123<br>
+                                            12345 Ihre Stadt<br>
+                                            Deutschland
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <strong>AN:</strong><br>
+                                        <% if (order.customer && order.customer.name) { %>
+                                            <small>
+                                                <%= order.customer.name %><br>
+                                                <% if (order.customer.street) { %><%= order.customer.street %><br><% } %>
+                                                <% if (order.customer.zip || order.customer.city) { %>
+                                                    <%= order.customer.zip || '' %> <%= order.customer.city || '' %><br>
+                                                <% } %>
+                                                <% if (order.customer.country) { %><%= order.customer.country %><br><% } %>
+                                            </small>
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <div class="barcode-text">
+                                        ||||| ||| || ||||| || ||| |||||
+                                    </div>
+                                    <div class="barcode-text">
+                                        <%= order.deliveryNoteNumber %>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    <small>
+                                        Spediteur: <span id="selected-carrier">DHL</span><br>
+                                        Service: Standard<br>
+                                        Gewicht: ca. <%= order.items ? order.items.length * 0.5 : 1 %> kg
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Zusammenfassung und finale Aktionen -->
+                    <div class="print-section" id="final-actions-section">
+                        <h4><i class="fas fa-check-double"></i> 4. Abschluss</h4>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Versand-Informationen eingeben:</h6>
+                                <form id="shipping-info-form">
+                                    <div class="mb-3">
+                                        <label for="tracking-number" class="form-label">Sendungsverfolgungsnummer:</label>
+                                        <input type="text" id="tracking-number" class="form-control" placeholder="z.B. 1234567890123456">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="shipping-cost" class="form-label">Versandkosten (optional):</label>
+                                        <input type="number" id="shipping-cost" class="form-control" step="0.01" placeholder="0.00">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="shipping-notes" class="form-label">Versand-Notizen:</label>
+                                        <textarea id="shipping-notes" class="form-control" rows="2" placeholder="Besondere Hinweise zum Versand..."></textarea>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6>Finale Aktionen:</h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success btn-lg" onclick="markAsShipped()">
+                                        <i class="fas fa-truck"></i> Als versendet markieren
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="saveProgress()">
+                                        <i class="fas fa-save"></i> Fortschritt speichern
+                                    </button>
+                                </div>
+
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Nach dem Markieren als "versendet" wird der Auftrag abgeschlossen und
+                                        die Tracking-Informationen werden an den Kunden übermittelt.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row no-print">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <a href="/orders/<%= order._id %>" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Zurück zu Details
+                </a>
+
+                <div>
+                    <button class="btn btn-primary me-2" onclick="window.print()">
+                        <i class="fas fa-print"></i> Alles drucken
+                    </button>
+                    <a href="/orders" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> Zur Auftrags-Liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderId = '<%= order._id %>';
+
+        // Packstück-Etiketten generieren
+        generatePackageLabels();
+
+        // Event Listeners
+        document.getElementById('package-count').addEventListener('change', generatePackageLabels);
+        document.getElementById('carrier-select').addEventListener('change', updateCarrierInfo);
+
+        function generatePackageLabels() {
+            const count = parseInt(document.getElementById('package-count').value) || 1;
+            const container = document.getElementById('package-labels-container');
+
+            let labelsHtml = '';
+
+            for (let i = 1; i <= count; i++) {
+                labelsHtml += `
+                <div class="label-preview mb-3">
+                    <h6>PACKSTÜCK ${i} von ${count}</h6>
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <strong>Lieferschein: <%= order.deliveryNoteNumber %></strong><br>
+                            <% if (order.customer && order.customer.name) { %>
+                                Für: <%= order.customer.name %><br>
+                            <% } %>
+                            <small>Kommissioniert: ${new Date().toLocaleDateString('de-DE')}</small>
+                        </div>
+                    </div>
+                    <div class="barcode-text mt-2">
+                        |||| || |||| |||| || ||||
+                    </div>
+                    <div class="barcode-text">
+                        <%= order.deliveryNoteNumber %>-${i.toString().padStart(2, '0')}
+                    </div>
+                </div>
+            `;
+            }
+
+            container.innerHTML = labelsHtml;
+        }
+
+        function updateCarrierInfo() {
+            const carrier = document.getElementById('carrier-select').value;
+            document.getElementById('selected-carrier').textContent = carrier.toUpperCase();
+        }
+
+        // Globale Funktionen für onClick Handler
+        window.printSection = function(sectionId) {
+            const section = document.getElementById(sectionId + '-preview') ||
+                document.getElementById(sectionId + '-container');
+
+            if (section) {
+                const originalContents = document.body.innerHTML;
+                const printContents = section.innerHTML;
+
+                document.body.innerHTML = printContents;
+                window.print();
+                document.body.innerHTML = originalContents;
+
+                // Event Listeners wieder hinzufügen
+                setTimeout(() => {
+                    location.reload();
+                }, 100);
+            }
+        };
+
+        window.generateDeliveryNotePDF = function() {
+            // Hier könnte eine PDF-Generierung implementiert werden
+            window.open(`/orders/${orderId}/delivery-note-pdf`, '_blank');
+        };
+
+        window.generateShippingLabel = function() {
+            const carrier = document.getElementById('carrier-select').value;
+            alert(`Live-Label-Generierung für ${carrier.toUpperCase()} würde hier implementiert werden.`);
+            // Hier würde die Integration mit der jeweiligen Versand-API erfolgen
+        };
+
+        window.markAsShipped = async function() {
+            const trackingNumber = document.getElementById('tracking-number').value;
+            const shippingCost = document.getElementById('shipping-cost').value;
+            const notes = document.getElementById('shipping-notes').value;
+            const carrier = document.getElementById('carrier-select').value;
+
+            if (!trackingNumber) {
+                alert('Bitte geben Sie eine Sendungsverfolgungsnummer ein.');
+                return;
+            }
+
+            if (!confirm('Sind Sie sicher, dass Sie diesen Auftrag als versendet markieren möchten?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/orders/${orderId}/mark-shipped`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        trackingNumber,
+                        shippingCost: shippingCost ? parseFloat(shippingCost) : null,
+                        notes,
+                        carrier
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Auftrag wurde erfolgreich als versendet markiert!');
+                    window.location.href = '/orders';
+                } else {
+                    const error = await response.json();
+                    alert('Fehler: ' + (error.message || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                console.error('Fehler beim Markieren als versendet:', error);
+                alert('Fehler beim Markieren als versendet');
+            }
+        };
+
+        window.saveProgress = async function() {
+            try {
+                const response = await fetch(`/orders/${orderId}/save-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Fortschritt gespeichert!');
+                } else {
+                    alert('Fehler beim Speichern');
+                }
+            } catch (error) {
+                console.error('Fehler beim Speichern:', error);
+                alert('Fehler beim Speichern');
+            }
+        };
+    });
+</script>
+</body>
+</html>

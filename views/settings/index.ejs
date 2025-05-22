@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Kommissionier-App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<%- include('../partials/navbar') %>
+
+<div class="container mt-4">
+    <!-- Flash-Nachrichten -->
+    <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
+        <div class="alert alert-success alert-dismissible fade show">
+            <%= success_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
+        <div class="alert alert-danger alert-dismissible fade show">
+            <%= error_msg %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2><i class="fas fa-cogs"></i> Systemeinstellungen</h2>
+        </div>
+        <div class="card-body">
+            <!-- No Border API Konfiguration -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h4 class="mb-3"><i class="fas fa-plug"></i> No Border API</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-vial"></i> API-Verbindung testen
+                                    </h5>
+                                    <p class="card-text">Testen Sie die Verbindung zur No Border API und überprüfen Sie die Konfiguration.</p>
+                                    <a href="/settings/api-test" class="btn btn-primary">
+                                        <i class="fas fa-play"></i> Test starten
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-sync"></i> Manuelle Synchronisierung
+                                    </h5>
+                                    <p class="card-text">Synchronisieren Sie alle offenen Lieferscheine manuell mit der No Border API.</p>
+                                    <a href="/settings/sync" class="btn btn-success">
+                                        <i class="fas fa-download"></i> Synchronisieren
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API-Konfigurationshilfe -->
+                    <div class="card bg-light mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle"></i> Konfigurationshilfe</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Umgebungsvariablen:</strong></p>
+                            <pre class="bg-dark text-light p-3 rounded">NOBORDER_API_URL=https://api.no-border.eu
+NOBORDER_USERNAME=IhrBenutzername
+NOBORDER_PASSWORD=IhrPasswort</pre>
+                            <p class="mb-0"><small class="text-muted">Diese Einstellungen werden in der <code>.env</code> Datei konfiguriert.</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Synchronisierung-Einstellungen -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h4 class="mb-3"><i class="fas fa-robot"></i> Automatische Synchronisierung</h4>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6>Status der automatischen Synchronisierung</h6>
+                                    <p class="mb-0">
+                                        Die automatische Synchronisierung läuft alle
+                                        <span class="badge bg-primary">1 Minute</span>
+                                        im Hintergrund und importiert neue Lieferscheine aus No Border.
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check-circle"></i> Aktiv
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benutzerverwaltung -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h4 class="mb-3"><i class="fas fa-users"></i> Benutzerverwaltung</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-user-plus"></i> Neuen Benutzer hinzufügen
+                                    </h5>
+                                    <p class="card-text">Erstellen Sie neue Benutzerkonten für Lager- und Versandmitarbeiter.</p>
+                                    <a href="/auth/register" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Benutzer hinzufügen
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users-cog"></i> Benutzer verwalten
+                                    </h5>
+                                    <p class="card-text">Bearbeiten Sie Benutzerrechte und verwalten Sie bestehende Konten.</p>
+                                    <button class="btn btn-outline-primary" disabled>
+                                        <i class="fas fa-wrench"></i> In Entwicklung
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System-Information -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h4 class="mb-3"><i class="fas fa-info-circle"></i> System-Information</h4>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                        <tr>
+                                            <th style="width: 40%">Anwendung:</th>
+                                            <td>Kommissionier-App v1.0.0</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Node.js Version:</th>
+                                            <td><%= process.version %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Umgebung:</th>
+                                            <td>
+                                                <% if (process.env.NODE_ENV === 'production') { %>
+                                                    <span class="badge bg-success">Production</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-warning">Development</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tbody>
+                                        <tr>
+                                            <th style="width: 40%">Server-Zeit:</th>
+                                            <td><%= new Date().toLocaleString('de-DE') %></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Betriebszeit:</th>
+                                            <td><%= Math.floor(process.uptime() / 60) %> Minuten</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Port:</th>
+                                            <td><%= process.env.PORT || 3000 %></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zukünftige Features -->
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3"><i class="fas fa-rocket"></i> Geplante Features</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-chart-bar"></i> Berichte & Analysen</h6>
+                                    <p class="card-text small">Detaillierte Auswertungen über Kommissionierleistung und Durchlaufzeiten.</p>
+                                    <span class="badge bg-info">Geplant</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-mobile-alt"></i> Mobile App</h6>
+                                    <p class="card-text small">Optimierte mobile Oberfläche für Kommissionierung mit Handscannern.</p>
+                                    <span class="badge bg-info">Geplant</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-print"></i> Etikettendruck</h6>
+                                    <p class="card-text small">Automatischer Druck von Paletten- und Versandetiketten.</p>
+                                    <span class="badge bg-info">Geplant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

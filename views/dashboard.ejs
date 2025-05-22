@@ -9,38 +9,7 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="/">Kommissionier-App</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" href="/dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/orders">Aufträge</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i> <%= user.name %>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <% if (user.role === 'admin') { %>
-                            <li><a class="dropdown-item" href="/auth/register">Benutzer registrieren</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                        <% } %>
-                        <li><a class="dropdown-item" href="/auth/logout">Logout</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<%- include('partials/navbar') %>
 
 <div class="container mt-4">
     <!-- Flash-Nachrichten -->
@@ -58,195 +27,218 @@
         </div>
     <% } %>
 
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h2>Dashboard</h2>
-        </div>
-        <div class="card-body">
-            <h4 class="mb-4">Willkommen, <%= user.name %>!</h4>
-
-            <!-- Sync-Status Anzeige -->
-            <% if (typeof syncStats !== 'undefined' && syncStats) { %>
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card bg-light">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-sync"></i> No Border Synchronisierung
-                                    <% if (syncStats.isRunning) { %>
-                                        <span class="badge bg-success ms-2">Aktiv</span>
-                                    <% } else { %>
-                                        <span class="badge bg-secondary ms-2">Inaktiv</span>
-                                    <% } %>
-                                </h5>
+    <!-- Willkommen Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-1">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Willkommen, <%= user.name %>!
+                            </h2>
+                            <p class="mb-0 lead">
+                                Kommissionier- und Warenausgangssystem
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="text-white-50">
+                                <%= new Date().toLocaleDateString('de-DE', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                }) %>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>Letzte Synchronisierung:</strong><br>
-                                        <% if (syncStats.lastSyncTime) { %>
-                                            <%= new Date(syncStats.lastSyncTime).toLocaleString('de-DE') %>
-                                        <% } else { %>
-                                            Noch keine
-                                        <% } %>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Erfolgreiche Syncs:</strong><br>
-                                        <span class="text-success"><%= syncStats.successfulSyncs %></span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Fehlgeschlagene Syncs:</strong><br>
-                                        <span class="text-danger"><%= syncStats.failedSyncs %></span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-sm btn-primary" onclick="triggerManualSync()">
-                                            <i class="fas fa-sync"></i> Manuell synchronisieren
-                                        </button>
-                                    </div>
-                                </div>
-                                <% if (syncStats.lastError) { %>
-                                    <div class="alert alert-warning mt-2 mb-0">
-                                        <small><strong>Letzter Fehler:</strong> <%= syncStats.lastError %></small>
-                                    </div>
-                                <% } %>
+                            <div class="h4 mb-0">
+                                <%= new Date().toLocaleTimeString('de-DE', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }) %>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            <% } %>
-
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-search"></i> Lieferschein suchen
-                            </h5>
-                            <p class="card-text">Suchen Sie einen Lieferschein nach Nummer.</p>
-                            <a href="/orders/search" class="btn btn-primary">Zur Suche</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-clipboard-list"></i> Aktuelle Aufträge
-                            </h5>
-                            <p class="card-text">Zeigen Sie alle aktuellen Aufträge an.</p>
-                            <a href="/orders" class="btn btn-primary">Aufträge anzeigen</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-tag"></i> Etiketten-Generator
-                            </h5>
-                            <p class="card-text">Erstellen und drucken Sie Paletten- und Packstücketiketten.</p>
-                            <a href="/labels" class="btn btn-primary">Zu den Etiketten</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-truck"></i> Versandlabels
-                            </h5>
-                            <p class="card-text">Erstellen Sie Versandlabels für verschiedene Transportdienste.</p>
-                            <a href="/shipping" class="btn btn-primary">Zum Versand</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-plug"></i> API-Verbindung
-                            </h5>
-                            <p class="card-text">Testen Sie die Verbindung zur No Border API.</p>
-                            <a href="/orders/api-test" class="btn btn-primary">API testen</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-sync"></i> Synchronisierung
-                            </h5>
-                            <p class="card-text">Synchronisieren Sie alle offenen Lieferscheine mit No Border.</p>
-                            <a href="/orders/sync" class="btn btn-primary">Jetzt synchronisieren</a>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <% if (user.role === 'admin') { %>
-                <div class="mt-5">
-                    <h4 class="mb-3">Administration</h4>
+    <!-- Hauptfunktionen -->
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-search fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Lieferschein suchen</h4>
+                    <p class="card-text">
+                        Suchen Sie einen Lieferschein nach Nummer oder scannen Sie den Barcode.
+                    </p>
+                    <a href="/orders/search" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search"></i> Zur Suche
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-clipboard-list fa-3x text-success"></i>
+                    </div>
+                    <h4 class="card-title">Aktuelle Aufträge</h4>
+                    <p class="card-text">
+                        Zeigen Sie alle aktuellen Aufträge und deren Status an.
+                    </p>
+                    <a href="/orders" class="btn btn-success btn-lg">
+                        <i class="fas fa-list"></i> Aufträge anzeigen
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hourglass-half fa-3x text-warning"></i>
+                    </div>
+                    <h4 class="card-title">In Bearbeitung</h4>
+                    <p class="card-text">
+                        Zeigen Sie alle Aufträge an, die gerade kommissioniert werden.
+                    </p>
+                    <a href="/orders?status=in_progress" class="btn btn-warning btn-lg">
+                        <i class="fas fa-play"></i> Fortsetzen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schnellzugriffe -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0"><i class="fas fa-bolt"></i> Schnellzugriffe</h4>
+                </div>
+                <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-users"></i> Benutzerverwaltung
-                                    </h5>
-                                    <p class="card-text">Benutzer hinzufügen, bearbeiten oder deaktivieren.</p>
-                                    <a href="/auth/register" class="btn btn-primary">Benutzer verwalten</a>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="/orders?status=new" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-plus-circle"></i><br>
+                                <small>Neue Aufträge</small>
+                            </a>
                         </div>
-
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-cogs"></i> Systemeinstellungen
-                                    </h5>
-                                    <p class="card-text">Konfigurieren Sie API-Verbindungen und andere Einstellungen.</p>
-                                    <a href="/settings" class="btn btn-primary">Zu den Einstellungen</a>
-                                </div>
-                            </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="/orders?status=packed" class="btn btn-outline-info w-100">
+                                <i class="fas fa-box"></i><br>
+                                <small>Verpackt</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="/orders?status=shipped" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-truck"></i><br>
+                                <small>Versendet</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="/orders?status=completed" class="btn btn-outline-success w-100">
+                                <i class="fas fa-check-circle"></i><br>
+                                <small>Abgeschlossen</small>
+                            </a>
                         </div>
                     </div>
                 </div>
-            <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync-Status für alle Benutzer (vereinfacht) -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-1">
+                                <i class="fas fa-sync text-primary"></i>
+                                Automatische Synchronisierung mit No Border
+                            </h6>
+                            <p class="mb-0 text-muted small">
+                                Neue Lieferscheine werden automatisch alle 1 Minute importiert.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Aktiv
+                            </span>
+                            <% if(user.role === 'admin') { %>
+                                <a href="/settings" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="fas fa-cogs"></i> Verwalten
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hilfe und Tipps -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Tipp des Tages</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Barcode-Scanner verwenden:</strong>
+                        Sie können einen Barcode-Scanner verwenden, um Lieferscheinnummern schnell zu erfassen.
+                        Einfach das Eingabefeld fokussieren und den Barcode scannen.
+                    </p>
+                    <small class="text-muted">
+                        <i class="fas fa-keyboard"></i> Tastaturbefehle: Strg+F für Schnellsuche, Strg+L für Auftragsliste
+                    </small>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Tastaturbefehle -->
 <script>
-    async function triggerManualSync() {
-        try {
-            const response = await fetch('/api/trigger-sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                alert('Synchronisierung gestartet!');
-                location.reload(); // Seite neu laden um aktualisierte Stats zu zeigen
-            } else {
-                alert('Fehler beim Starten der Synchronisierung: ' + result.error);
-            }
-        } catch (error) {
-            alert('Fehler: ' + error.message);
+    document.addEventListener('keydown', function(e) {
+        // Strg+F für Schnellsuche
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            window.location.href = '/orders/search';
         }
-    }
+
+        // Strg+L für Auftragsliste
+        if (e.ctrlKey && e.key === 'l') {
+            e.preventDefault();
+            window.location.href = '/orders';
+        }
+    });
+
+    // Auto-refresh der Uhrzeit
+    setInterval(function() {
+        const now = new Date();
+        const timeElement = document.querySelector('.h4.mb-0');
+        if (timeElement) {
+            timeElement.textContent = now.toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }, 60000); // Jede Minute aktualisieren
 </script>
 </body>
 </html>

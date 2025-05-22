@@ -10,7 +10,8 @@ const OrderSchema = new mongoose.Schema({
     number: {
         type: String,
         required: false,
-        unique: true
+        unique: true,
+        sparse: true
     },
     noBorderId: String, // No Border API ID
     deliveryNoteNumber: {
@@ -19,6 +20,8 @@ const OrderSchema = new mongoose.Schema({
         unique: true
     },
     externalDeliveryNoteNumber: String,
+    externalOrderNumber: String,
+    customerOrderNumber: String,
 
     // Zeitstempel und Datumsinformationen
     createdAt: {
@@ -69,7 +72,8 @@ const OrderSchema = new mongoose.Schema({
         trackingUrl: String,
         weight: Number,
         cost: Number,
-        method: String
+        method: String,
+        hasTracking: Boolean
     },
 
     // Verbundener Auftrag
@@ -78,22 +82,32 @@ const OrderSchema = new mongoose.Schema({
     },
     orderNumber: String,
 
-    // Auftragspositionen/Lieferscheinpositionen
+    // Auftragspositionen/Lieferscheinpositionen - VOLLSTÄNDIG KORRIGIERT
     items: [{
         // API-Felder aus No Border
         id: String,              // Positions-ID in No Border
         productId: String,       // Produkt-ID
-        sku: String,             // SKU/Artikelnummer
+        sku: String,             // SKU/Artikelnummer (z.B. "1011-H")
+        articleNumber: String,   // Artikelnummer für Anzeige
         productCode: String,     // Produktcode
         productName: String,     // Produktname
         name: String,            // Artikelname/Beschreibung
-        description: String,     // Zusätzliche Beschreibung
+        description: String,     // Hauptbeschreibung für Anzeige
+        longDescription: String, // Ausführliche Beschreibung
+        comment: String,         // Kommentare aus API
+
         quantity: Number,        // Menge
         unit: String,            // Einheit (Stk, kg, etc.)
         price: Number,           // Preis
+        currency: String,        // Währung
         tax: Number,             // Steuer
+        taxText: String,         // Steuer-Text
         discount: Number,        // Rabatt
         position: Number,        // Positionsnummer
+
+        // Umsatz-Informationen
+        netRevenue: Number,      // Netto-Umsatz einzeln
+        grossRevenue: Number,    // Brutto-Umsatz einzeln
 
         // Lager- und Logistikinformationen
         warehouseId: String,
@@ -128,6 +142,10 @@ const OrderSchema = new mongoose.Schema({
         volume: Number,
         notes: String,
 
+        // No Border spezifische Felder
+        webId: String,
+        hasChildren: Boolean,
+
         // Zusätzliche Felder für benutzerdefinierte Daten
         customFields: {
             type: Map,
@@ -159,6 +177,29 @@ const OrderSchema = new mongoose.Schema({
     // Kommentare/Notizen
     internalComment: String,
     customerComment: String,
+
+    // Projekt-Informationen
+    project: {
+        id: String,
+        name: String
+    },
+
+    // Warehouse-Informationen
+    warehouse: String,
+
+    // Finanzinformationen
+    total: {
+        amount: String,
+        currency: String
+    },
+    netSales: {
+        amount: String,
+        currency: String
+    },
+
+    // Rechnungsinformationen
+    invoiceId: String,
+    invoiceNumber: String,
 
     // Zusätzliche Felder für benutzerdefinierte Daten
     customFields: {
@@ -200,18 +241,25 @@ Order.mapApiPositionsToSchema = function(apiPositions) {
     return apiPositions.map(pos => {
         return {
             id: pos.id,
-            productId: pos.productId,
-            sku: pos.sku || pos.productCode,
-            productCode: pos.productCode,
-            productName: pos.productName,
-            name: pos.name || pos.productName,
-            description: pos.description,
+            productId: pos.product?.id,
+            sku: pos.product?.number || pos.sku || pos.productCode,
+            articleNumber: pos.product?.number || pos.articleNumber,
+            productCode: pos.product?.number || pos.productCode,
+            productName: pos.product?.name || pos.productName,
+            name: pos.product?.name || pos.name || pos.productName,
+            description: pos.product?.name || pos.description,
+            longDescription: pos.product?.description || pos.comment,
+            comment: pos.comment,
             quantity: pos.quantity || pos.amount,
-            unit: pos.unit,
-            price: pos.price,
-            tax: pos.tax || pos.taxRate,
-            discount: pos.discount,
-            position: pos.position || pos.sort,
+            unit: pos.unit || 'Stk',
+            price: parseFloat(pos.price?.amount || pos.price || 0),
+            currency: pos.price?.currency || pos.currency || 'EUR',
+            tax: pos.tax?.effectiveVatRate || pos.tax || pos.taxRate || 0,
+            taxText: pos.tax?.taxText || '',
+            discount: pos.discount || 0,
+            position: pos.sort || pos.position,
+            netRevenue: parseFloat(pos.netRevenueSingle?.amount || 0),
+            grossRevenue: parseFloat(pos.grossRevenueSingle?.amount || 0),
             warehouseId: pos.warehouseId,
             warehouseName: pos.warehouseName,
             storageLocation: pos.storageLocation,
@@ -219,7 +267,9 @@ Order.mapApiPositionsToSchema = function(apiPositions) {
             storageLocationName: pos.storageLocationName,
             batch: pos.batch || pos.lot,
             barcode: pos.barcode || pos.ean,
-            ean: pos.ean
+            ean: pos.ean,
+            webId: pos.webId || '',
+            hasChildren: pos.hasChildren || false
         };
     });
 };

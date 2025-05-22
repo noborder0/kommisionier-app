@@ -1,6 +1,8 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand" href="/">Kommissionier-App</a>
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-boxes"></i> Kommissionier-App
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -8,30 +10,74 @@
             <ul class="navbar-nav me-auto">
                 <% if(user) { %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/orders">Aufträge</a>
+                        <a class="nav-link" href="/orders">
+                            <i class="fas fa-clipboard-list"></i> Aufträge
+                        </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/orders/search">
+                            <i class="fas fa-search"></i> Suchen
+                        </a>
+                    </li>
+
+                    <!-- Admin-spezifische Navigation -->
+                    <% if(user.role === 'admin') { %>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-tools"></i> Administration
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="/settings">
+                                        <i class="fas fa-cogs"></i> Einstellungen
+                                    </a></li>
+                                <li><a class="dropdown-item" href="/settings/api-test">
+                                        <i class="fas fa-plug"></i> API-Test
+                                    </a></li>
+                                <li><a class="dropdown-item" href="/settings/sync">
+                                        <i class="fas fa-sync"></i> Synchronisierung
+                                    </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/auth/register">
+                                        <i class="fas fa-user-plus"></i> Benutzer hinzufügen
+                                    </a></li>
+                            </ul>
+                        </li>
+                    <% } %>
                 <% } %>
             </ul>
+
             <ul class="navbar-nav ms-auto">
                 <% if(user) { %>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user"></i> <%= user.name %>
+                            <% if(user.role === 'admin') { %>
+                                <span class="badge bg-warning ms-1">Admin</span>
+                            <% } %>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <% if(user.role === 'admin') { %>
-                                <li><a class="dropdown-item" href="/auth/register">Benutzer registrieren</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                            <% } %>
-                            <li><a class="dropdown-item" href="/auth/logout">Logout</a></li>
+                            <li><h6 class="dropdown-header">
+                                    <i class="fas fa-id-badge"></i> <%= user.name %>
+                                </h6></li>
+                            <li><small class="dropdown-item-text text-muted">
+                                    Rolle: <%= user.role === 'admin' ? 'Administrator' : user.role === 'warehouse' ? 'Lager' : 'Versand' %>
+                                </small></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/auth/logout">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a></li>
                         </ul>
                     </li>
                 <% } else { %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">Login</a>
+                        <a class="nav-link" href="/auth/login">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
                     </li>
                 <% } %>
             </ul>

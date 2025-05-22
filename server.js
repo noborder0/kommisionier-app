@@ -53,6 +53,7 @@ app.use((req, res, next) => {
     res.locals.error_msg = req.flash('error_msg');
     res.locals.error = req.flash('error');
     res.locals.user = req.user || null;
+    res.locals.process = process; // Für System-Informationen in Views
     next();
 });
 
@@ -62,8 +63,9 @@ const { ensureAuthenticated } = require('./middleware/auth');
 // Routen
 app.use('/auth', require('./routes/auth'));
 app.use('/orders', require('./routes/orders'));
+app.use('/settings', require('./routes/settings')); // Neue Settings-Route
 
-// Dashboard-Route hinzufügen
+// Dashboard-Route
 app.get('/dashboard', ensureAuthenticated, (req, res) => {
     res.render('dashboard', {
         title: 'Dashboard',

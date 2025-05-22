@@ -7,6 +7,45 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .scanning-active {
+            border: 3px solid #28a745;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
+        .item-completed {
+            background-color: #d4edda;
+        }
+
+        .item-partial {
+            background-color: #fff3cd;
+        }
+
+        .item-pending {
+            background-color: #f8f9fa;
+        }
+
+        .scan-input {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .progress-summary {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .scanner-sound {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -58,10 +97,33 @@
         </div>
     <% } %>
 
+    <!-- Progress Summary (Sticky) -->
+    <% if (order.status === 'in_progress') { %>
+        <div class="progress-summary">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-0">
+                                <i class="fas fa-barcode"></i> Kommissionierung: <%= order.deliveryNoteNumber %>
+                            </h5>
+                            <div id="progress-text">Fortschritt wird berechnet...</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="progress" style="height: 25px;">
+                                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
     <div class="card mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h2>Lieferschein: <%= order.deliveryNoteNumber %></h2>
-
             <div>
                 <% if (order.status === 'new') { %>
                     <span class="badge bg-secondary">Neu</span>
@@ -78,207 +140,223 @@
         </div>
 
         <div class="card-body">
-            <div class="row">
-                <!-- Linke Spalte: Basis-Informationen -->
-                <div class="col-md-6">
-                    <h4>Allgemeine Informationen</h4>
-                    <table class="table table-striped table-hover">
-                        <tbody>
-                        <tr>
-                            <th style="width: 40%">Lieferschein-Nr.:</th>
-                            <td><%= order.deliveryNoteNumber %></td>
-                        </tr>
-                        <% if (order.orderNumber) { %>
-                            <tr>
-                                <th>Auftrags-Nr.:</th>
-                                <td><%= order.orderNumber %></td>
-                            </tr>
-                        <% } %>
-                        <% if (order.externalDeliveryNoteNumber) { %>
-                            <tr>
-                                <th>Externe Lieferschein-Nr.:</th>
-                                <td><%= order.externalDeliveryNoteNumber %></td>
-                            </tr>
-                        <% } %>
-                        <tr>
-                            <th>Status:</th>
-                            <td>
-                                <% if (order.status === 'new') { %>
-                                    <span class="badge bg-secondary">Neu</span>
-                                <% } else if (order.status === 'in_progress') { %>
-                                    <span class="badge bg-warning">In Bearbeitung</span>
-                                <% } else if (order.status === 'packed') { %>
-                                    <span class="badge bg-info">Verpackt</span>
-                                <% } else if (order.status === 'shipped') { %>
-                                    <span class="badge bg-primary">Versendet</span>
-                                <% } else if (order.status === 'completed') { %>
-                                    <span class="badge bg-success">Abgeschlossen</span>
-                                <% } %>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Erstellt am:</th>
-                            <td><%= order.createdAt ? order.createdAt.toLocaleDateString('de-DE') : 'Nicht verfügbar' %></td>
-                        </tr>
-                        <% if (order.deliveryDate) { %>
-                            <tr>
-                                <th>Lieferdatum:</th>
-                                <td><%= order.deliveryDate.toLocaleDateString('de-DE') %></td>
-                            </tr>
-                        <% } %>
-                        <% if (order.assignedTo) { %>
-                            <tr>
-                                <th>Zugewiesen an:</th>
-                                <td><%= order.assignedTo.name %></td>
-                            </tr>
-                        <% } %>
-                        <% if (order.project && order.project.name) { %>
-                            <tr>
-                                <th>Projekt:</th>
-                                <td><%= order.project.name %></td>
-                            </tr>
-                        <% } %>
-                        </tbody>
-                    </table>
-                </div>
+            <!-- Barcode Scanner (nur bei in_progress) -->
+            <% if (order.status === 'in_progress') { %>
+                <div class="card bg-light mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-barcode"></i> Barcode Scanner
+                            <span class="badge bg-light text-dark ms-2" id="scan-mode">Bereit zum Scannen</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label for="barcode-input" class="form-label">Barcode scannen oder eingeben:</label>
+                                <input type="text"
+                                       id="barcode-input"
+                                       class="form-control scan-input"
+                                       placeholder="Barcode hier scannen..."
+                                       autofocus>
+                                <small class="text-muted">
+                                    Fokus muss im Eingabefeld sein. Scanner sendet automatisch Enter nach dem Scannen.
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Aktionen:</label><br>
+                                <button id="clear-scan" class="btn btn-outline-secondary btn-sm me-2">
+                                    <i class="fas fa-eraser"></i> Leeren
+                                </button>
+                                <button id="manual-add" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Manuell hinzufügen
+                                </button>
+                            </div>
+                        </div>
 
-                <!-- Rechte Spalte: Kundeninformationen -->
-                <div class="col-md-6">
-                    <h4>Kundeninformationen</h4>
-                    <div class="card">
-                        <div class="card-body">
-                            <% if (order.customer) { %>
-                                <p class="mb-1"><strong><%= order.customer.name || 'Kein Name' %></strong></p>
-                                <% if (order.customer.name2) { %><p class="mb-1"><%= order.customer.name2 %></p><% } %>
-                                <% if (order.customer.department) { %><p class="mb-1"><%= order.customer.department %></p><% } %>
-                                <% if (order.customer.street) { %><p class="mb-1"><%= order.customer.street %></p><% } %>
-                                <% if (order.customer.zip || order.customer.city) { %>
-                                    <p class="mb-1"><%= order.customer.zip || '' %> <%= order.customer.city || '' %></p>
-                                <% } %>
-                                <% if (order.customer.country) { %><p class="mb-1"><%= order.customer.country %></p><% } %>
-
-                                <hr>
-
-                                <% if (order.customer.email) { %>
-                                    <p class="mb-1"><i class="fas fa-envelope"></i> <%= order.customer.email %></p>
-                                <% } %>
-                                <% if (order.customer.phone) { %>
-                                    <p class="mb-1"><i class="fas fa-phone"></i> <%= order.customer.phone %></p>
-                                <% } %>
-                            <% } else { %>
-                                <p>Keine Kundeninformationen verfügbar</p>
-                            <% } %>
+                        <!-- Letzter Scan Anzeige -->
+                        <div id="last-scan-info" class="mt-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <strong>Letzter Scan:</strong> <span id="last-scan-code"></span>
+                                <span id="last-scan-result"></span>
+                            </div>
                         </div>
                     </div>
+                </div>
+            <% } %>
 
-                    <!-- Versandinformationen, falls vorhanden -->
-                    <% if (order.shipping && (order.shipping.method || order.shipping.carrier || order.shipping.trackingNumber)) { %>
-                        <h4 class="mt-4">Versandinformationen</h4>
+            <!-- Basis-Informationen (kompakter bei in_progress) -->
+            <% if (order.status !== 'in_progress') { %>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h4>Allgemeine Informationen</h4>
+                        <table class="table table-striped table-sm">
+                            <tbody>
+                            <tr>
+                                <th style="width: 40%">Lieferschein-Nr.:</th>
+                                <td><%= order.deliveryNoteNumber %></td>
+                            </tr>
+                            <% if (order.orderNumber) { %>
+                                <tr>
+                                    <th>Auftrags-Nr.:</th>
+                                    <td><%= order.orderNumber %></td>
+                                </tr>
+                            <% } %>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    <% if (order.status === 'new') { %>
+                                        <span class="badge bg-secondary">Neu</span>
+                                    <% } else if (order.status === 'in_progress') { %>
+                                        <span class="badge bg-warning">In Bearbeitung</span>
+                                    <% } else if (order.status === 'packed') { %>
+                                        <span class="badge bg-info">Verpackt</span>
+                                    <% } else if (order.status === 'shipped') { %>
+                                        <span class="badge bg-primary">Versendet</span>
+                                    <% } else if (order.status === 'completed') { %>
+                                        <span class="badge bg-success">Abgeschlossen</span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Erstellt am:</th>
+                                <td><%= order.createdAt ? order.createdAt.toLocaleDateString('de-DE') : 'Nicht verfügbar' %></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h4>Kundeninformationen</h4>
                         <div class="card">
                             <div class="card-body">
-                                <% if (order.shipping.method) { %>
-                                    <p><strong>Versandart:</strong> <%= order.shipping.method %></p>
-                                <% } %>
-                                <% if (order.shipping.carrier) { %>
-                                    <p><strong>Spediteur:</strong> <%= order.shipping.carrier %></p>
-                                <% } %>
-                                <% if (order.shipping.trackingNumber) { %>
-                                    <p>
-                                        <strong>Tracking-Nr.:</strong>
-                                        <%= order.shipping.trackingNumber %>
-                                        <% if (order.shipping.trackingUrl) { %>
-                                            <a href="<%= order.shipping.trackingUrl %>" target="_blank" class="ms-2">
-                                                <i class="fas fa-external-link-alt"></i> Verfolgen
-                                            </a>
-                                        <% } %>
-                                    </p>
-                                <% } %>
-                                <% if (order.shipping.weight) { %>
-                                    <p><strong>Gewicht:</strong> <%= order.shipping.weight %> kg</p>
+                                <% if (order.customer && order.customer.name) { %>
+                                    <p class="mb-1"><strong><%= order.customer.name %></strong></p>
+                                    <% if (order.customer.street) { %><p class="mb-1"><%= order.customer.street %></p><% } %>
+                                    <% if (order.customer.zip || order.customer.city) { %>
+                                        <p class="mb-0"><%= order.customer.zip || '' %> <%= order.customer.city || '' %></p>
+                                    <% } %>
+                                <% } else { %>
+                                    <p>Keine Kundeninformationen verfügbar</p>
                                 <% } %>
                             </div>
                         </div>
-                    <% } %>
+                    </div>
                 </div>
-            </div>
+            <% } %>
 
-            <!-- Artikelliste -->
-            <h4 class="mt-4">Artikel</h4>
+            <!-- Artikelliste mit Scan-Funktionalität -->
+            <h4 class="mt-4">
+                Artikel
+                <% if (order.status === 'in_progress') { %>
+                    <small class="text-muted">(Scannen Sie die Barcodes zum Kommissionieren)</small>
+                <% } %>
+            </h4>
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped table-hover" id="items-table">
                     <thead class="table-light">
                     <tr>
                         <th>Pos</th>
                         <th>Artikelnr.</th>
                         <th>Beschreibung</th>
-                        <th>Menge</th>
-                        <th>Einheit</th>
-                        <th>Lager</th>
-                        <th>Charge</th>
-                        <th>Status</th>
+                        <th>Soll</th>
+                        <% if (order.status === 'in_progress') { %>
+                            <th>Ist</th>
+                            <th>Status</th>
+                            <th>Aktionen</th>
+                        <% } else { %>
+                            <th>Einheit</th>
+                            <th>Preis</th>
+                            <th>Status</th>
+                        <% } %>
                     </tr>
                     </thead>
                     <tbody>
                     <% if (order.items && order.items.length > 0) { %>
                         <% order.items.forEach((item, index) => { %>
-                            <tr>
+                            <tr id="item-row-<%= index %>"
+                                data-item-id="<%= item.id %>"
+                                data-sku="<%= item.sku || item.articleNumber %>"
+                                data-barcode="<%= item.barcode || item.ean || item.sku || item.articleNumber %>"
+                                data-required="<%= item.quantity %>"
+                                data-picked="<%= item.quantityPicked || 0 %>"
+                                class="<%= (item.quantityPicked >= item.quantity) ? 'item-completed' : (item.quantityPicked > 0) ? 'item-partial' : 'item-pending' %>">
+
                                 <td><%= item.position || index + 1 %></td>
-                                <td><%= item.articleNumber %></td>
-                                <td><%= item.description %></td>
-                                <td><%= item.quantity %></td>
-                                <td><%= item.unit %></td>
+
                                 <td>
-                                    <% if (item.warehouseName) { %>
-                                        <%= item.warehouseName %>
-                                        <% if (item.storageLocation) { %>
-                                            (<%= item.storageLocation %>)
+                                    <strong><%= item.articleNumber || item.sku || '-' %></strong>
+                                    <% if (item.barcode || item.ean) { %>
+                                        <br><small class="text-muted">BC: <%= item.barcode || item.ean %></small>
+                                    <% } %>
+                                </td>
+
+                                <td>
+                                    <strong><%= item.description || item.productName || '-' %></strong>
+                                    <% if (item.comment) { %>
+                                        <br><small class="text-muted"><%= item.comment %></small>
+                                    <% } %>
+                                </td>
+
+                                <td class="required-qty"><%= item.quantity || 0 %></td>
+
+                                <% if (order.status === 'in_progress') { %>
+                                    <td>
+                                        <span class="picked-qty badge bg-secondary"><%= item.quantityPicked || 0 %></span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge">
+                                            <% if (item.quantityPicked >= item.quantity) { %>
+                                                <span class="badge bg-success">Vollständig</span>
+                                            <% } else if (item.quantityPicked > 0) { %>
+                                                <span class="badge bg-warning">Teilweise</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">Offen</span>
+                                            <% } %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary manual-pick"
+                                                data-item-index="<%= index %>">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <% if (item.quantityPicked > 0) { %>
+                                            <button class="btn btn-sm btn-outline-danger manual-remove"
+                                                    data-item-index="<%= index %>">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
                                         <% } %>
-                                    <% } else { %>
-                                        -
-                                    <% } %>
-                                </td>
-                                <td><%= item.batch || '-' %></td>
-                                <td>
-                                    <% if (item.quantityPicked >= item.quantity) { %>
-                                        <span class="badge bg-success">Kommissioniert</span>
-                                    <% } else if (item.quantityPicked > 0) { %>
-                                        <span class="badge bg-warning">Teilweise</span>
-                                    <% } else { %>
-                                        <span class="badge bg-secondary">Offen</span>
-                                    <% } %>
-                                </td>
+                                    </td>
+                                <% } else { %>
+                                    <td><%= item.unit || 'Stk' %></td>
+                                    <td>
+                                        <% if (item.price) { %>
+                                            <%= Number(item.price).toFixed(2) %> <%= item.currency || 'EUR' %>
+                                        <% } else { %>
+                                            -
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (item.quantityPicked >= item.quantity) { %>
+                                            <span class="badge bg-success">Kommissioniert</span>
+                                        <% } else if (item.quantityPicked > 0) { %>
+                                            <span class="badge bg-warning">Teilweise</span>
+                                        <% } else { %>
+                                            <span class="badge bg-secondary">Offen</span>
+                                        <% } %>
+                                    </td>
+                                <% } %>
                             </tr>
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="8" class="text-center">Keine Artikel vorhanden</td>
+                            <td colspan="<%= order.status === 'in_progress' ? '7' : '6' %>" class="text-center">
+                                Keine Artikel vorhanden
+                            </td>
                         </tr>
                     <% } %>
                     </tbody>
                 </table>
             </div>
-
-            <!-- Kommentare -->
-            <% if (order.customerComment || order.internalComment) { %>
-                <div class="row mt-4">
-                    <% if (order.customerComment) { %>
-                        <div class="col-md-6">
-                            <h4>Kundenkommentar</h4>
-                            <div class="alert alert-info">
-                                <%= order.customerComment %>
-                            </div>
-                        </div>
-                    <% } %>
-                    <% if (order.internalComment) { %>
-                        <div class="col-md-6">
-                            <h4>Interner Kommentar</h4>
-                            <div class="alert alert-secondary">
-                                <%= order.internalComment %>
-                            </div>
-                        </div>
-                    <% } %>
-                </div>
-            <% } %>
 
             <!-- Aktionsbuttons -->
             <div class="row mt-4">
@@ -331,47 +409,505 @@
                                 </form>
                             </div>
                         </div>
+
                     <% } else if (order.status === 'in_progress') { %>
-                        <div class="text-center mb-4">
-                            <a href="/packaging/<%= order.packagingMethod %>/<%= order._id %>" class="btn btn-primary btn-lg">
-                                <i class="fas fa-box-open"></i> Kommissionierung fortsetzen
+                        <!-- Kommissionierung-Aktionen -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <button id="complete-picking" class="btn btn-success btn-lg" disabled>
+                                    <i class="fas fa-check-circle"></i> Kommissionierung abschließen
+                                </button>
+                                <small class="text-muted d-block mt-1">
+                                    Alle Artikel müssen vollständig kommissioniert sein
+                                </small>
+                            </div>
+
+                            <div>
+                                <button id="save-progress" class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-save"></i> Fortschritt speichern
+                                </button>
+                                <a href="/orders" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Zurück zur Liste
+                                </a>
+                            </div>
+                        </div>
+
+                    <% } else if (order.status === 'packed') { %>
+                        <!-- Weitergeleitet zu Druck-Seite -->
+                        <div class="text-center">
+                            <h4 class="text-success mb-4">
+                                <i class="fas fa-check-circle"></i> Kommissionierung abgeschlossen!
+                            </h4>
+                            <a href="/orders/<%= order._id %>/print" class="btn btn-primary btn-lg">
+                                <i class="fas fa-print"></i> Zu den Druckoptionen
                             </a>
                         </div>
-                    <% } else if (order.status === 'packed') { %>
-                        <div class="text-center mb-4">
-                            <a href="/shipping/<%= order._id %>" class="btn btn-primary btn-lg">
-                                <i class="fas fa-truck"></i> Versand bearbeiten
+
+                    <% } else { %>
+                        <!-- Standard-Aktionen -->
+                        <div class="d-flex justify-content-between">
+                            <a href="/orders" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Zurück zur Liste
                             </a>
+
+                            <div>
+                                <% if (order.status === 'packed') { %>
+                                    <a href="/orders/<%= order._id %>/print" class="btn btn-info me-2">
+                                        <i class="fas fa-print"></i> Drucken
+                                    </a>
+                                <% } %>
+
+                                <% if (order.status !== 'completed') { %>
+                                    <form action="/orders/<%= order._id %>/complete" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-success"
+                                                onclick="return confirm('Sind Sie sicher, dass Sie diesen Auftrag abschließen möchten?');">
+                                            <i class="fas fa-check-circle"></i> Auftrag abschließen
+                                        </button>
+                                    </form>
+                                <% } %>
+                            </div>
                         </div>
                     <% } %>
-
-                    <div class="d-flex justify-content-between">
-                        <a href="/orders" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Zurück zur Liste
-                        </a>
-
-                        <div>
-                            <% if (order.status === 'in_progress' || order.status === 'packed') { %>
-                                <a href="/labels/<%= order._id %>" class="btn btn-info me-2">
-                                    <i class="fas fa-tags"></i> Etiketten drucken
-                                </a>
-                            <% } %>
-
-                            <% if (order.status !== 'completed') { %>
-                                <form action="/orders/<%= order._id %>/complete" method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-success" onclick="return confirm('Sind Sie sicher, dass Sie diesen Auftrag abschließen möchten?');">
-                                        <i class="fas fa-check-circle"></i> Auftrag abschließen
-                                    </button>
-                                </form>
-                            <% } %>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Audio für Scanner-Feedback -->
+<audio id="scan-success-sound" class="scanner-sound" preload="auto">
+    <source src="data:audio/mpeg;base64,//OEZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAIAAAKVwAzMzMzMzMzMzMzMzMzMzNmZmZmZmZmZmZmZmZmZmZmmZmZmZmZmZmZmZmZmZmZzMzMzMzMzMzMzMzMzMzM5ubm5ubm5ubm5ubm5ubm//////////////////////////////////8AAAA8TEFNRTMuOTlyAaUAAAAAAAAAABQgJANYQgAAOAAAAlV7CXWqAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBQAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+</audio>
+<audio id="scan-error-sound" class="scanner-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBQAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+</audio>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderId = '<%= order._id %>';
+        const orderStatus = '<%= order.status %>';
+
+        // Nur Scanner-Funktionalität aktivieren wenn in_progress
+        if (orderStatus !== 'in_progress') {
+            return;
+        }
+
+        // Scanner-Elemente
+        const barcodeInput = document.getElementById('barcode-input');
+        const scanModeDisplay = document.getElementById('scan-mode');
+        const lastScanInfo = document.getElementById('last-scan-info');
+        const lastScanCode = document.getElementById('last-scan-code');
+        const lastScanResult = document.getElementById('last-scan-result');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const completePickingBtn = document.getElementById('complete-picking');
+        const itemsTable = document.getElementById('items-table');
+
+        // Audio-Elemente
+        const successSound = document.getElementById('scan-success-sound');
+        const errorSound = document.getElementById('scan-error-sound');
+
+        // Scanner-Status
+        let isScanning = false;
+        let scanBuffer = '';
+        let lastInputTime = 0;
+        const scanThreshold = 100; // ms zwischen Eingaben für Scanner-Erkennung
+
+        // Initialisierung
+        updateProgress();
+        autoFocusInput();
+
+        // Event Listeners
+        barcodeInput.addEventListener('keypress', handleKeyPress);
+        barcodeInput.addEventListener('input', handleInput);
+        barcodeInput.addEventListener('focus', () => {
+            barcodeInput.classList.add('scanning-active');
+            scanModeDisplay.textContent = 'Scannen aktiv';
+            scanModeDisplay.className = 'badge bg-success text-white ms-2';
+        });
+        barcodeInput.addEventListener('blur', () => {
+            barcodeInput.classList.remove('scanning-active');
+            scanModeDisplay.textContent = 'Bereit zum Scannen';
+            scanModeDisplay.className = 'badge bg-light text-dark ms-2';
+        });
+
+        document.getElementById('clear-scan').addEventListener('click', () => {
+            barcodeInput.value = '';
+            barcodeInput.focus();
+        });
+
+        document.getElementById('manual-add').addEventListener('click', handleManualAdd);
+        document.getElementById('save-progress').addEventListener('click', saveProgress);
+        completePickingBtn.addEventListener('click', completePicking);
+
+        // Manuelle +/- Buttons
+        document.querySelectorAll('.manual-pick').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemIndex = e.target.closest('button').dataset.itemIndex;
+                incrementItem(itemIndex);
+            });
+        });
+
+        document.querySelectorAll('.manual-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemIndex = e.target.closest('button').dataset.itemIndex;
+                decrementItem(itemIndex);
+            });
+        });
+
+        // Funktionen
+        function handleKeyPress(e) {
+            const currentTime = new Date().getTime();
+
+            // Scanner-Eingabe erkennen
+            if (currentTime - lastInputTime > scanThreshold) {
+                scanBuffer = '';
+                isScanning = true;
+            }
+
+            scanBuffer += e.key;
+            lastInputTime = currentTime;
+
+            // Enter = Scan abgeschlossen
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                if (isScanning && scanBuffer.length > 3) {
+                    // Scanner-Eingabe
+                    const scannedCode = scanBuffer.replace('Enter', '').trim();
+                    processScan(scannedCode);
+                } else {
+                    // Manuelle Eingabe
+                    const manualCode = barcodeInput.value.trim();
+                    if (manualCode) {
+                        processScan(manualCode);
+                    }
+                }
+
+                isScanning = false;
+                scanBuffer = '';
+                barcodeInput.value = '';
+            }
+        }
+
+        function handleInput(e) {
+            // Für manuelle Eingabe - noch kein automatisches Processing
+        }
+
+        function processScan(scannedCode) {
+            console.log('Verarbeite Scan:', scannedCode);
+
+            // Finde passenden Artikel
+            const matchingRow = findMatchingItem(scannedCode);
+
+            if (matchingRow) {
+                const itemIndex = Array.from(itemsTable.querySelectorAll('tbody tr')).indexOf(matchingRow);
+                incrementItem(itemIndex);
+
+                showScanResult(scannedCode, `✅ Artikel gefunden und hinzugefügt`, 'success');
+                playSound(successSound);
+            } else {
+                showScanResult(scannedCode, `❌ Artikel nicht gefunden`, 'error');
+                playSound(errorSound);
+            }
+
+            // Input wieder fokussieren
+            setTimeout(() => {
+                barcodeInput.focus();
+            }, 100);
+        }
+
+        function findMatchingItem(scannedCode) {
+            const rows = itemsTable.querySelectorAll('tbody tr[data-item-id]');
+
+            for (let row of rows) {
+                const sku = row.dataset.sku;
+                const barcode = row.dataset.barcode;
+
+                // Vergleiche mit verschiedenen Feldern
+                if (sku && sku.toLowerCase() === scannedCode.toLowerCase()) {
+                    return row;
+                }
+                if (barcode && barcode.toLowerCase() === scannedCode.toLowerCase()) {
+                    return row;
+                }
+
+                // Auch teilweise Übereinstimmungen
+                if (sku && scannedCode.includes(sku)) {
+                    return row;
+                }
+                if (barcode && scannedCode.includes(barcode)) {
+                    return row;
+                }
+            }
+
+            return null;
+        }
+
+        function incrementItem(itemIndex) {
+            const row = itemsTable.querySelectorAll('tbody tr[data-item-id]')[itemIndex];
+            if (!row) return;
+
+            const currentPicked = parseInt(row.dataset.picked) || 0;
+            const required = parseInt(row.dataset.required) || 0;
+
+            if (currentPicked < required) {
+                const newPicked = currentPicked + 1;
+                updateItemQuantity(row, newPicked, required);
+
+                // Server Update
+                updateItemOnServer(row.dataset.itemId, newPicked);
+            }
+        }
+
+        function decrementItem(itemIndex) {
+            const row = itemsTable.querySelectorAll('tbody tr[data-item-id]')[itemIndex];
+            if (!row) return;
+
+            const currentPicked = parseInt(row.dataset.picked) || 0;
+            const required = parseInt(row.dataset.required) || 0;
+
+            if (currentPicked > 0) {
+                const newPicked = currentPicked - 1;
+                updateItemQuantity(row, newPicked, required);
+
+                // Server Update
+                updateItemOnServer(row.dataset.itemId, newPicked);
+            }
+        }
+
+        function updateItemQuantity(row, newPicked, required) {
+            // Dataset aktualisieren
+            row.dataset.picked = newPicked;
+
+            // UI aktualisieren
+            const pickedQtyElement = row.querySelector('.picked-qty');
+            const statusBadge = row.querySelector('.status-badge');
+
+            if (pickedQtyElement) {
+                pickedQtyElement.textContent = newPicked;
+            }
+
+            // Status-Badge aktualisieren
+            if (statusBadge) {
+                let badgeClass, badgeText;
+
+                if (newPicked >= required) {
+                    badgeClass = 'badge bg-success';
+                    badgeText = 'Vollständig';
+                    row.className = 'item-completed';
+                } else if (newPicked > 0) {
+                    badgeClass = 'badge bg-warning';
+                    badgeText = 'Teilweise';
+                    row.className = 'item-partial';
+                } else {
+                    badgeClass = 'badge bg-secondary';
+                    badgeText = 'Offen';
+                    row.className = 'item-pending';
+                }
+
+                statusBadge.innerHTML = `<span class="${badgeClass}">${badgeText}</span>`;
+            }
+
+            // Fortschritt aktualisieren
+            updateProgress();
+
+            // Buttons aktualisieren
+            updateActionButtons(row, newPicked);
+        }
+
+        function updateActionButtons(row, currentPicked) {
+            const actionsCell = row.querySelector('td:last-child');
+            if (!actionsCell) return;
+
+            const itemIndex = Array.from(itemsTable.querySelectorAll('tbody tr[data-item-id]')).indexOf(row);
+
+            let buttonsHtml = `
+            <button class="btn btn-sm btn-outline-primary manual-pick" data-item-index="${itemIndex}">
+                <i class="fas fa-plus"></i>
+            </button>
+        `;
+
+            if (currentPicked > 0) {
+                buttonsHtml += `
+                <button class="btn btn-sm btn-outline-danger manual-remove" data-item-index="${itemIndex}">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            }
+
+            actionsCell.innerHTML = buttonsHtml;
+
+            // Event Listeners wieder hinzufügen
+            actionsCell.querySelector('.manual-pick').addEventListener('click', (e) => {
+                incrementItem(itemIndex);
+            });
+
+            const removeBtn = actionsCell.querySelector('.manual-remove');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', (e) => {
+                    decrementItem(itemIndex);
+                });
+            }
+        }
+
+        function updateProgress() {
+            const rows = itemsTable.querySelectorAll('tbody tr[data-item-id]');
+            let totalItems = 0;
+            let completedItems = 0;
+            let totalQuantity = 0;
+            let pickedQuantity = 0;
+
+            rows.forEach(row => {
+                const required = parseInt(row.dataset.required) || 0;
+                const picked = parseInt(row.dataset.picked) || 0;
+
+                totalItems++;
+                totalQuantity += required;
+                pickedQuantity += picked;
+
+                if (picked >= required && required > 0) {
+                    completedItems++;
+                }
+            });
+
+            const progressPercent = totalQuantity > 0 ? (pickedQuantity / totalQuantity * 100) : 0;
+
+            // Progress Bar aktualisieren
+            if (progressBar) {
+                progressBar.style.width = progressPercent + '%';
+                progressBar.textContent = Math.round(progressPercent) + '%';
+
+                if (progressPercent === 100) {
+                    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                    progressBar.classList.add('bg-success');
+                }
+            }
+
+            // Progress Text aktualisieren
+            if (progressText) {
+                progressText.textContent = `${completedItems}/${totalItems} Artikel vollständig (${pickedQuantity}/${totalQuantity} Stück)`;
+            }
+
+            // Complete Button aktivieren/deaktivieren
+            if (completePickingBtn) {
+                completePickingBtn.disabled = progressPercent < 100;
+
+                if (progressPercent === 100) {
+                    completePickingBtn.classList.remove('btn-success');
+                    completePickingBtn.classList.add('btn-success');
+                    completePickingBtn.innerHTML = '<i class="fas fa-check-circle"></i> Kommissionierung abschließen';
+                }
+            }
+        }
+
+        function showScanResult(code, message, type) {
+            lastScanCode.textContent = code;
+            lastScanResult.textContent = message;
+            lastScanResult.className = type === 'success' ? 'text-success' : 'text-danger';
+            lastScanInfo.style.display = 'block';
+
+            // Nach 3 Sekunden ausblenden
+            setTimeout(() => {
+                lastScanInfo.style.display = 'none';
+            }, 3000);
+        }
+
+        function playSound(audioElement) {
+            try {
+                audioElement.currentTime = 0;
+                audioElement.play().catch(e => console.log('Audio konnte nicht abgespielt werden:', e));
+            } catch (e) {
+                // Ignore audio errors
+            }
+        }
+
+        function autoFocusInput() {
+            if (barcodeInput) {
+                barcodeInput.focus();
+
+                // Regelmäßig Focus zurücksetzen
+                setInterval(() => {
+                    if (document.activeElement !== barcodeInput) {
+                        barcodeInput.focus();
+                    }
+                }, 2000);
+            }
+        }
+
+        function handleManualAdd() {
+            const code = prompt('Barcode oder Artikelnummer eingeben:');
+            if (code) {
+                processScan(code.trim());
+            }
+        }
+
+        async function updateItemOnServer(itemId, newQuantity) {
+            try {
+                const response = await fetch(`/orders/${orderId}/items/${itemId}/pick`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quantityPicked: newQuantity
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Fehler beim Server-Update');
+                }
+            } catch (error) {
+                console.error('Fehler beim Server-Update:', error);
+            }
+        }
+
+        async function saveProgress() {
+            try {
+                const response = await fetch(`/orders/${orderId}/save-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    showScanResult('', '💾 Fortschritt gespeichert', 'success');
+                } else {
+                    showScanResult('', '❌ Fehler beim Speichern', 'error');
+                }
+            } catch (error) {
+                console.error('Fehler beim Speichern:', error);
+                showScanResult('', '❌ Fehler beim Speichern', 'error');
+            }
+        }
+
+        async function completePicking() {
+            if (!confirm('Sind Sie sicher, dass die Kommissionierung abgeschlossen ist?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/orders/${orderId}/complete-picking`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // Weiterleitung zur Druck-Seite
+                    window.location.href = `/orders/${orderId}/print`;
+                } else {
+                    alert('Fehler beim Abschließen der Kommissionierung');
+                }
+            } catch (error) {
+                console.error('Fehler beim Abschließen:', error);
+                alert('Fehler beim Abschließen der Kommissionierung');
+            }
+        }
+    });
+</script>2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N2QQAoUXrTp66hVFApGn+DyvGAbBUPm6OGqYSYGNYrE8N
