@@ -8,14 +8,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        .feature-card {
+        .feature-card, .action-card {
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .feature-card:hover {
+        .feature-card:hover, .action-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
             border-color: #0d6efd;
         }
 
@@ -28,18 +34,180 @@
             50% { opacity: 0.5; }
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .stat-widget {
+            border-radius: 15px;
             color: white;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-widget::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.1) 20px,
+                    rgba(255,255,255,0.1) 40px
+            );
+            animation: slide 15s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .stat-widget-body {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            opacity: 0.9;
+        }
+
+        .stat-content h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-content p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.1) 20px,
+                    rgba(255,255,255,0.1) 40px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        .dashboard-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .express-alert {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
             border: none;
+            color: white;
+            animation: pulse 2s infinite;
         }
 
-        .quick-access-btn {
-            transition: all 0.2s ease;
+        .project-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #6610f2;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
 
-        .quick-access-btn:hover {
-            transform: scale(1.05);
+        .priority-badge {
+            background: #dc3545;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #dee2e6;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .order-card.express {
+            border-left-color: #dc3545;
+            background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
+        }
+
+        .order-card.new { border-left-color: #6c757d; }
+        .order-card.in_progress { border-left-color: #ffc107; }
+        .order-card.packed { border-left-color: #17a2b8; }
+        .order-card.shipped { border-left-color: #0d6efd; }
+        .order-card.completed { border-left-color: #28a745; }
+
+        .batch-preview-card {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .batch-preview-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .tip-card {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
         }
     </style>
 </head>
@@ -47,242 +215,259 @@
 <%- include('partials/navbar') %>
 
 <div class="container mt-4">
-    <!-- Flash-Nachrichten -->
-    <% if(typeof success_msg !== 'undefined' && success_msg !== '') { %>
-        <div class="alert alert-success alert-dismissible fade show">
-            <%= success_msg %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <% } %>
+    <!-- Flash Messages -->
+    <%- include('partials/flash-messages') %>
 
-    <% if(typeof error_msg !== 'undefined' && error_msg !== '') { %>
-        <div class="alert alert-danger alert-dismissible fade show">
-            <%= error_msg %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <% } %>
-
-    <!-- Willkommen Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-1">
-                                <i class="fas fa-tachometer-alt"></i>
-                                Willkommen<% if(typeof user !== 'undefined' && user && user.name) { %>, <%= user.name %><% } %>!
-                            </h2>
-                            <p class="mb-0 lead">
-                                Kommissionier- und Warenausgangssystem
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="text-white-50">
-                                <%= new Date().toLocaleDateString('de-DE', {
-                                    weekday: 'long',
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                }) %>
-                            </div>
-                            <div class="h4 mb-0" id="current-time">
-                                <%= new Date().toLocaleTimeString('de-DE', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                }) %>
-                            </div>
-                        </div>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="dashboard-content">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Willkommen<% if(typeof user !== 'undefined' && user && user.name) { %>, <%= user.name %><% } %>!
+                    </h1>
+                    <p class="mb-0 fs-5">
+                        Kommissionier- und Warenausgangssystem
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="text-white-50">
+                        <%= new Date().toLocaleDateString('de-DE', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        }) %>
+                    </div>
+                    <div class="h3 mb-0" id="current-time">
+                        <%= new Date().toLocaleTimeString('de-DE', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) %>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Sync-Status wenn Admin -->
+    <!-- Sync Status (Admin) -->
     <% if(typeof user !== 'undefined' && user && user.role === 'admin' && typeof syncStats !== 'undefined' && syncStats) { %>
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card <%= (syncStats.isRunning) ? 'border-success' : 'border-warning' %>">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="mb-1">
-                                    <i class="fas fa-sync <%= (syncStats.isRunning) ? 'text-success' : 'text-warning' %>"></i>
-                                    Synchronisierungs-Status
-                                </h6>
-                                <div>
-                                    <% if (syncStats.isRunning) { %>
-                                        <span class="badge bg-success <%= (syncStats.isSyncing) ? 'sync-indicator' : '' %>">
-                                            <i class="fas fa-check-circle"></i> Aktiv
-                                        </span>
-                                        <% if (syncStats.isSyncing) { %>
-                                            <span class="badge bg-warning ms-2">
-                                                <i class="fas fa-spinner fa-spin"></i> Synchronisiert gerade...
-                                            </span>
-                                        <% } %>
-                                        <small class="text-muted ms-2">
-                                            Alle <%= syncStats.syncIntervalMinutes || 1 %> Minute(n)
-                                        </small>
-                                    <% } else { %>
-                                        <span class="badge bg-warning">
-                                            <i class="fas fa-pause-circle"></i> Pausiert
-                                        </span>
-                                        <small class="text-muted ms-2">
-                                            Automatische Synchronisierung ist deaktiviert
-                                        </small>
-                                    <% } %>
-                                </div>
-                                <% if (syncStats.lastSyncTime) { %>
-                                    <small class="text-muted">
-                                        Letzte Synchronisierung: <%= new Date(syncStats.lastSyncTime).toLocaleTimeString('de-DE') %>
-                                        <% if (syncStats.successfulSyncs > 0 && syncStats.totalSyncs > 0) { %>
-                                            | Erfolgsrate: <%= Math.round((syncStats.successfulSyncs / syncStats.totalSyncs) * 100) %>%
-                                        <% } %>
-                                    </small>
-                                <% } %>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <a href="/settings" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-cog"></i> Verwalten
-                                </a>
-                                <button class="btn btn-sm btn-primary ms-2" onclick="triggerSync()">
-                                    <i class="fas fa-sync"></i> Jetzt synchronisieren
-                                </button>
-                            </div>
-                        </div>
+        <div class="alert <%= (syncStats.isRunning) ? 'alert-success' : 'alert-warning' %> mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">
+                        <i class="fas fa-sync <%= (syncStats.isRunning) ? 'text-success' : 'text-warning' %>"></i>
+                        Synchronisierungs-Status
+                    </h6>
+                    <div>
+                        <% if (syncStats.isRunning) { %>
+                            <span class="badge bg-success <%= (syncStats.isSyncing) ? 'sync-indicator' : '' %>">
+                                <i class="fas fa-check-circle"></i> Aktiv
+                            </span>
+                            <% if (syncStats.isSyncing) { %>
+                                <span class="badge bg-warning ms-2">
+                                    <i class="fas fa-spinner fa-spin"></i> Synchronisiert...
+                                </span>
+                            <% } %>
+                            <small class="text-muted ms-2">
+                                Alle <%= syncStats.syncIntervalMinutes || 1 %> Minute(n)
+                            </small>
+                        <% } else { %>
+                            <span class="badge bg-warning">
+                                <i class="fas fa-pause-circle"></i> Pausiert
+                            </span>
+                        <% } %>
                     </div>
+                    <% if (syncStats.lastSyncTime) { %>
+                        <small class="text-muted">
+                            Letzte Sync: <%= new Date(syncStats.lastSyncTime).toLocaleTimeString('de-DE') %>
+                            <% if (syncStats.successfulSyncs > 0 && syncStats.totalSyncs > 0) { %>
+                                | Erfolgsrate: <%= Math.round((syncStats.successfulSyncs / syncStats.totalSyncs) * 100) %>%
+                            <% } %>
+                        </small>
+                    <% } %>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/settings" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="fas fa-cog"></i> Verwalten
+                    </a>
+                    <button class="btn btn-sm btn-primary" onclick="triggerSync()">
+                        <i class="fas fa-sync"></i> Jetzt sync
+                    </button>
                 </div>
             </div>
         </div>
     <% } %>
 
-    <!-- Statistik-Karten -->
+    <!-- Statistics Widgets -->
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card">
-                <div class="card-body text-center text-white">
-                    <i class="fas fa-clipboard-list fa-2x mb-2"></i>
-                    <h5>Neue Aufträge</h5>
-                    <div class="h3 mb-0" id="new-orders-count">-</div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="new-orders-count">-</h3>
+                        <p>Neue Aufträge</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body text-center text-white">
-                    <i class="fas fa-hourglass-half fa-2x mb-2"></i>
-                    <h5>In Bearbeitung</h5>
-                    <div class="h3 mb-0" id="progress-orders-count">-</div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="progress-orders-count">-</h3>
+                        <p>In Bearbeitung</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="card-body text-center text-white">
-                    <i class="fas fa-box fa-2x mb-2"></i>
-                    <h5>Verpackt</h5>
-                    <div class="h3 mb-0" id="packed-orders-count">-</div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="packed-orders-count">-</h3>
+                        <p>Verpackt</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="card-body text-center text-white">
-                    <i class="fas fa-truck fa-2x mb-2"></i>
-                    <h5>Heute versendet</h5>
-                    <div class="h3 mb-0" id="shipped-today-count">-</div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-widget" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-widget-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="shipped-today-count">-</h3>
+                        <p>Heute versendet</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Hauptfunktionen -->
-    <div class="row">
-        <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card h-100 shadow-sm border-0 feature-card">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-search fa-3x text-primary"></i>
-                    </div>
-                    <h4 class="card-title">Lieferschein suchen</h4>
-                    <p class="card-text">
-                        Suchen Sie einen Lieferschein nach Nummer oder scannen Sie den Barcode.
-                    </p>
-                    <a href="/orders/search" class="btn btn-primary btn-lg">
-                        <i class="fas fa-search"></i> Zur Suche
-                    </a>
+    <!-- Express Orders Alert -->
+    <div id="expressOrdersSection" style="display: none;">
+        <div class="alert express-alert mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-1">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="expressOrdersCount">0</span> Express-Aufträge benötigen sofortige Bearbeitung!
+                    </h5>
+                    <small>Diese Aufträge müssen heute noch versendet werden.</small>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card h-100 shadow-sm border-0 feature-card">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-clipboard-list fa-3x text-success"></i>
-                    </div>
-                    <h4 class="card-title">Aktuelle Aufträge</h4>
-                    <p class="card-text">
-                        Zeigen Sie alle aktuellen Aufträge und deren Status an.
-                    </p>
-                    <a href="/orders" class="btn btn-success btn-lg">
-                        <i class="fas fa-list"></i> Aufträge anzeigen
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card h-100 shadow-sm border-0 feature-card">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-hourglass-half fa-3x text-warning"></i>
-                    </div>
-                    <h4 class="card-title">In Bearbeitung</h4>
-                    <p class="card-text">
-                        Zeigen Sie alle Aufträge an, die gerade kommissioniert werden.
-                    </p>
-                    <a href="/orders?status=in_progress" class="btn btn-warning btn-lg">
-                        <i class="fas fa-play"></i> Fortsetzen
+                <div class="col-md-4 text-end">
+                    <a href="/orders/express" class="btn btn-light btn-lg">
+                        <i class="fas fa-rocket"></i> Express-Dashboard
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Schnellzugriffe -->
-    <div class="row">
-        <div class="col-12">
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <a href="/orders/search" class="action-card text-center">
+            <div class="action-icon text-primary">
+                <i class="fas fa-search"></i>
+            </div>
+            <h5>Intelligente Suche</h5>
+            <p class="text-muted mb-0">Scannen, suchen oder durchsuchen</p>
+        </a>
+
+        <a href="/orders/batch-pick" class="action-card text-center">
+            <div class="action-icon text-success">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h5>Batch-Picking</h5>
+            <p class="text-muted mb-0">Mehrere Aufträge optimiert</p>
+            <span class="badge bg-success">NEU</span>
+        </a>
+
+        <a href="/orders/express" class="action-card text-center">
+            <div class="action-icon text-danger">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h5>Express-Dashboard</h5>
+            <p class="text-muted mb-0">Dringende Aufträge</p>
+            <span class="badge bg-danger">NEU</span>
+        </a>
+
+        <a href="/orders" class="action-card text-center">
+            <div class="action-icon text-info">
+                <i class="fas fa-list"></i>
+            </div>
+            <h5>Alle Aufträge</h5>
+            <p class="text-muted mb-0">Auftragsübersicht</p>
+        </a>
+    </div>
+
+    <!-- Recent Orders Preview -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Aktuelle Aufträge
+                    </h5>
+                    <a href="/orders" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-list"></i> Alle anzeigen
+                    </a>
+                </div>
+                <div class="card-body" id="recentOrdersContainer">
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-spinner fa-spin"></i> Lade Aufträge...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Batch Overview -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-layer-group"></i> Batch-Picking verfügbar
+                    </h6>
+                </div>
+                <div class="card-body" id="batchOverviewContainer">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Prüfe Batches...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
             <div class="card">
                 <div class="card-header bg-light">
-                    <h4 class="mb-0"><i class="fas fa-bolt"></i> Schnellzugriffe</h4>
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Schnellübersicht
+                    </h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="/orders?status=new" class="btn btn-outline-secondary w-100 quick-access-btn">
-                                <i class="fas fa-plus-circle"></i><br>
-                                <small>Neue Aufträge</small>
-                            </a>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="bg-light p-2 rounded">
+                                <small class="text-muted">Heute bearbeitet</small>
+                                <div class="fw-bold" id="todayProcessed">-</div>
+                            </div>
                         </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="/orders?status=packed" class="btn btn-outline-info w-100 quick-access-btn">
-                                <i class="fas fa-box"></i><br>
-                                <small>Verpackt</small>
-                            </a>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="/orders?status=shipped" class="btn btn-outline-primary w-100 quick-access-btn">
-                                <i class="fas fa-truck"></i><br>
-                                <small>Versendet</small>
-                            </a>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="/orders?status=completed" class="btn btn-outline-success w-100 quick-access-btn">
-                                <i class="fas fa-check-circle"></i><br>
-                                <small>Abgeschlossen</small>
-                            </a>
+                        <div class="col-6 mb-2">
+                            <div class="bg-light p-2 rounded">
+                                <small class="text-muted">Offene Projekte</small>
+                                <div class="fw-bold" id="activeProjects">-</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -290,60 +475,94 @@
         </div>
     </div>
 
-    <!-- Sync-Status für alle Benutzer (vereinfacht) -->
+    <!-- Tips and Shortcuts -->
+    <div class="tip-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2">
+                    <i class="fas fa-lightbulb"></i> Tipp des Tages
+                </h5>
+                <p class="mb-2">
+                    <strong>Tastenkürzel nutzen:</strong>
+                    Drücken Sie <kbd>Strg+F</kbd> für die Schnellsuche,
+                    <kbd>Strg+B</kbd> für Batch-Picking oder
+                    <kbd>Strg+E</kbd> für Express-Aufträge.
+                </p>
+                <small class="opacity-75">
+                    <i class="fas fa-barcode"></i> Scanner-Tipp: Fokus bleibt automatisch im Suchfeld für kontinuierliches Scannen.
+                </small>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light" onclick="showShortcutsModal()">
+                    <i class="fas fa-keyboard"></i> Alle Shortcuts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Status for Non-Admins -->
     <% if(typeof user !== 'undefined' && user && user.role !== 'admin') { %>
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="mb-1">
-                                    <i class="fas fa-sync text-primary"></i>
-                                    Automatische Synchronisierung mit No Border
-                                </h6>
-                                <p class="mb-0 text-muted small">
-                                    Neue Lieferscheine werden automatisch alle <%= (typeof syncStats !== 'undefined' && syncStats && syncStats.syncIntervalMinutes) ? syncStats.syncIntervalMinutes : 1 %> Minute(n) importiert.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-end">
-                                <% if(typeof syncStats !== 'undefined' && syncStats && syncStats.isRunning) { %>
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-check-circle"></i> Aktiv
-                                    </span>
-                                <% } else { %>
-                                    <span class="badge bg-warning">
-                                        <i class="fas fa-pause-circle"></i> Pausiert
-                                    </span>
-                                <% } %>
-                            </div>
-                        </div>
-                    </div>
+        <div class="alert alert-info mt-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">
+                        <i class="fas fa-sync text-primary"></i>
+                        Automatische Synchronisierung mit No Border
+                    </h6>
+                    <p class="mb-0 small">
+                        Neue Lieferscheine werden automatisch alle <%= (typeof syncStats !== 'undefined' && syncStats && syncStats.syncIntervalMinutes) ? syncStats.syncIntervalMinutes : 1 %> Minute(n) importiert.
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <% if(typeof syncStats !== 'undefined' && syncStats && syncStats.isRunning) { %>
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle"></i> Aktiv
+                        </span>
+                    <% } else { %>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-pause-circle"></i> Pausiert
+                        </span>
+                    <% } %>
                 </div>
             </div>
         </div>
     <% } %>
+</div>
 
-    <!-- Hilfe und Tipps -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Tipp des Tages</h6>
+<!-- Shortcuts Modal -->
+<div class="modal fade" id="shortcutsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-keyboard"></i> Tastenkürzel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Navigation</h6>
+                        <ul class="list-unstyled">
+                            <li><kbd>Strg+F</kbd> - Schnellsuche</li>
+                            <li><kbd>Strg+L</kbd> - Auftragsliste</li>
+                            <li><kbd>Strg+B</kbd> - Batch-Picking</li>
+                            <li><kbd>Strg+E</kbd> - Express-Aufträge</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Aktionen</h6>
+                        <ul class="list-unstyled">
+                            <li><kbd>F5</kbd> - Aktualisieren</li>
+                            <li><kbd>Esc</kbd> - Suche leeren</li>
+                            <li><kbd>F2</kbd> - Suche fokussieren</li>
+                            <li><kbd>F3</kbd> - Erweiterte Suche</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="mb-2">
-                        <strong>Barcode-Scanner verwenden:</strong>
-                        Sie können einen Barcode-Scanner verwenden, um Lieferscheinnummern schnell zu erfassen.
-                        Einfach das Eingabefeld fokussieren und den Barcode scannen.
-                    </p>
-                    <small class="text-muted">
-                        <i class="fas fa-keyboard"></i> Tastaturbefehle:
-                        <kbd>Strg+F</kbd> für Schnellsuche,
-                        <kbd>Strg+L</kbd> für Auftragsliste,
-                        <kbd>Strg+N</kbd> für neue Aufträge
-                    </small>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
             </div>
         </div>
     </div>
@@ -353,7 +572,200 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Tastaturbefehle
+        // Initialize dashboard
+        updateClock();
+        loadDashboardData();
+        setupKeyboardShortcuts();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboardData, 30000);
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+    });
+
+    // Clock update
+    function updateClock() {
+        const now = new Date();
+        const timeElement = document.getElementById('current-time');
+        if (timeElement) {
+            timeElement.textContent = now.toLocaleTimeString('de-DE', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+
+    // Load dashboard data
+    async function loadDashboardData() {
+        try {
+            // Load statistics
+            const statsResponse = await fetch('/api/dashboard/stats');
+            if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                updateStatistics(stats);
+            }
+
+            // Load recent orders
+            const ordersResponse = await fetch('/api/dashboard/recent-orders');
+            if (ordersResponse.ok) {
+                const orders = await ordersResponse.json();
+                updateRecentOrders(orders);
+            }
+
+            // Load batch overview
+            const batchResponse = await fetch('/api/dashboard/batch-overview');
+            if (batchResponse.ok) {
+                const batches = await batchResponse.json();
+                updateBatchOverview(batches);
+            }
+
+        } catch (error) {
+            console.error('Fehler beim Laden der Dashboard-Daten:', error);
+        }
+    }
+
+    // Update statistics
+    function updateStatistics(stats) {
+        const elements = {
+            'new-orders-count': stats.newOrders || 0,
+            'progress-orders-count': stats.inProgressOrders || 0,
+            'packed-orders-count': stats.packedOrders || 0,
+            'shipped-today-count': stats.shippedToday || 0,
+            'todayProcessed': stats.todayProcessed || 0,
+            'activeProjects': stats.activeProjects || 0
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+
+        // Update express orders alert
+        if (stats.expressOrders > 0) {
+            document.getElementById('expressOrdersSection').style.display = 'block';
+            document.getElementById('expressOrdersCount').textContent = stats.expressOrders;
+        } else {
+            document.getElementById('expressOrdersSection').style.display = 'none';
+        }
+    }
+
+    // Update recent orders
+    function updateRecentOrders(orders) {
+        const container = document.getElementById('recentOrdersContainer');
+
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p>Keine aktuellen Aufträge</p>
+                    <a href="/orders/sync" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sync"></i> Synchronisieren
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        orders.slice(0, 5).forEach(order => {
+            const statusColors = {
+                'new': 'secondary',
+                'in_progress': 'warning',
+                'packed': 'info',
+                'shipped': 'primary',
+                'completed': 'success'
+            };
+
+            const statusTexts = {
+                'new': 'Neu',
+                'in_progress': 'In Bearbeitung',
+                'packed': 'Verpackt',
+                'shipped': 'Versendet',
+                'completed': 'Abgeschlossen'
+            };
+
+            html += `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <strong>${order.deliveryNoteNumber}</strong>
+                        ${order.isExpress ? '<span class="badge bg-danger ms-2">EXPRESS</span>' : ''}
+                        ${order.customer ? `<br><small class="text-muted">${order.customer.name}</small>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${statusColors[order.status] || 'secondary'}">
+                            ${statusTexts[order.status] || order.status}
+                        </span>
+                        <br>
+                        <small class="text-muted">
+                            ${new Date(order.createdAt).toLocaleDateString('de-DE')}
+                        </small>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // Update batch overview
+    function updateBatchOverview(batches) {
+        const container = document.getElementById('batchOverviewContainer');
+
+        if (batches.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-layer-group fa-2x mb-2"></i>
+                    <p class="small mb-2">Keine Batches verfügbar</p>
+                    <a href="/orders" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> Aufträge
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        batches.slice(0, 2).forEach(batch => {
+            html += `
+                <div class="mb-3 p-2 bg-light rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="fw-bold">${batch.name}</small>
+                        <span class="badge bg-${batch.color}">${batch.orders.length}</span>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">${batch.consolidatedItems.length}</small>
+                            <div style="font-size: 0.7rem;">Pos.</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">${batch.estimatedTime}</small>
+                            <div style="font-size: 0.7rem;">Min.</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">${batch.totalQuantity || 0}</small>
+                            <div style="font-size: 0.7rem;">Artikel</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            <div class="d-grid">
+                <a href="/orders/batch-pick" class="btn btn-success btn-sm">
+                    <i class="fas fa-layer-group"></i> Batch-Picking
+                </a>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    // Keyboard shortcuts
+    function setupKeyboardShortcuts() {
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey) {
                 switch(e.key.toLowerCase()) {
@@ -365,62 +777,20 @@
                         e.preventDefault();
                         window.location.href = '/orders';
                         break;
-                    case 'n':
+                    case 'b':
                         e.preventDefault();
-                        window.location.href = '/orders?status=new';
+                        window.location.href = '/orders/batch-pick';
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        window.location.href = '/orders/express';
                         break;
                 }
             }
         });
-
-        // Auto-refresh der Uhrzeit
-        setInterval(function() {
-            const now = new Date();
-            const timeElement = document.getElementById('current-time');
-            if (timeElement) {
-                timeElement.textContent = now.toLocaleTimeString('de-DE', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            }
-        }, 1000);
-
-        // Lade Statistiken
-        loadStatistics();
-
-        // Aktualisiere Statistiken alle 30 Sekunden
-        setInterval(loadStatistics, 30000);
-    });
-
-    // Statistiken laden
-    async function loadStatistics() {
-        try {
-            const response = await fetch('/api/dashboard/stats');
-            if (response.ok) {
-                const stats = await response.json();
-
-                const newOrdersEl = document.getElementById('new-orders-count');
-                const progressOrdersEl = document.getElementById('progress-orders-count');
-                const packedOrdersEl = document.getElementById('packed-orders-count');
-                const shippedTodayEl = document.getElementById('shipped-today-count');
-
-                if (newOrdersEl) newOrdersEl.textContent = stats.newOrders || 0;
-                if (progressOrdersEl) progressOrdersEl.textContent = stats.inProgressOrders || 0;
-                if (packedOrdersEl) packedOrdersEl.textContent = stats.packedOrders || 0;
-                if (shippedTodayEl) shippedTodayEl.textContent = stats.shippedToday || 0;
-            }
-        } catch (error) {
-            // Fallback: Zeige Platzhalter
-            console.log('Statistiken konnten nicht geladen werden:', error);
-            const elements = ['new-orders-count', 'progress-orders-count', 'packed-orders-count', 'shipped-today-count'];
-            elements.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = '-';
-            });
-        }
     }
 
-    // Manuelle Synchronisierung (nur für Admins)
+    // Manual sync trigger (Admin only)
     async function triggerSync() {
         const btn = event.target.closest('button');
         if (!btn) return;
@@ -453,14 +823,21 @@
         }
     }
 
-    // Alert anzeigen
+    // Show shortcuts modal
+    function showShortcutsModal() {
+        const modal = new bootstrap.Modal(document.getElementById('shortcutsModal'));
+        modal.show();
+    }
+
+    // Alert function
     function showAlert(message, type) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
 
         const container = document.querySelector('.container');
         if (container) {
