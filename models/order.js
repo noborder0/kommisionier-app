@@ -184,6 +184,64 @@ const OrderSchema = new mongoose.Schema({
         name: String
     },
 
+    // Batch-Picking Informationen
+    batchId: {
+        type: String,
+        index: true
+    },
+    batchType: {
+        type: String,
+        enum: ['express', 'singleItem', 'multiItem', 'bulky', 'custom', 'project'],
+        index: true
+    },
+    batchStartTime: Date,
+    batchEndTime: Date,
+    batchSequence: Number, // Position im Batch
+
+    // Performance-Tracking
+    pickingStartTime: Date,
+    pickingEndTime: Date,
+    pickingDuration: Number, // in Millisekunden
+    pickerPerformance: {
+        itemsPerMinute: Number,
+        accuracy: Number, // Prozentsatz korrekt gepickter Items
+        errors: [{
+            itemId: String,
+            errorType: String, // 'wrong-quantity', 'wrong-item', 'damaged'
+            timestamp: Date,
+            correctedBy: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User'
+            }
+        }]
+    },
+
+    // Express-Handling
+    priority: {
+        type: String,
+        enum: ['low', 'normal', 'high', 'express'],
+        default: 'normal',
+        index: true
+    },
+    shippingDeadline: {
+        type: Date,
+        index: true
+    },
+    expressReason: String, // Grund für Express-Versand
+
+    // Scanning-History
+    scanHistory: [{
+        code: String,
+        timestamp: Date,
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        action: String, // 'item-scanned', 'location-confirmed', 'package-labeled'
+        success: Boolean,
+        errorMessage: String
+    }],
+
     // Warehouse-Informationen
     warehouse: String,
 
@@ -546,6 +604,163 @@ OrderSchema.statics.getProjectSummary = async function() {
         },
         { $sort: { orderCount: -1 } }
     ]);
+};
+
+// Batch-Indizes
+OrderSchema.index({ batchId: 1, batchSequence: 1 });
+OrderSchema.index({ batchType: 1, status: 1 });
+OrderSchema.index({ priority: 1, shippingDeadline: 1 });
+OrderSchema.index({ 'pickerPerformance.itemsPerMinute': -1 });
+
+// Batch-bezogene Methoden
+OrderSchema.methods.calculatePickingDuration = function() {
+    if (this.pickingStartTime && this.pickingEndTime) {
+        this.pickingDuration = this.pickingEndTime - this.pickingStartTime;
+
+        const minutes = this.pickingDuration / 60000;
+        const itemCount = this.items.reduce((sum, item) => sum + item.quantity, 0);
+
+        this.pickerPerformance = this.pickerPerformance || {};
+        this.pickerPerformance.itemsPerMinute = minutes > 0 ? Math.round(itemCount / minutes) : 0;
+    }
+};
+
+OrderSchema.methods.addScanEvent = function(code, action, success, errorMessage) {
+    this.scanHistory = this.scanHistory || [];
+    this.scanHistory.push({
+        code,
+        timestamp: new Date(),
+        action,
+        success,
+        errorMessage
+    });
+
+    // Behalte nur die letzten 100 Scans
+    if (this.scanHistory.length > 100) {
+        this.scanHistory = this.scanHistory.slice(-100);
+    }
+};
+
+// Statische Methoden für Batch-Analysen
+OrderSchema.statics.getBatchPerformance = async function(batchId) {
+    return this.aggregate([
+        { $match: { batchId } },
+        {
+            $group: {
+                _id: '$batchId',
+                totalOrders: { $sum: 1 },
+                totalItems: { $sum: { $size: '$items' } },
+                totalQuantity: {
+                    $sum: {
+                        $reduce: {
+                            input: '$items',
+                            initialValue: 0,
+                            in: { $add: ['$$value', '$$this.quantity'] }
+                        }
+                    }
+                },
+                avgDuration: { $avg: '$pickingDuration' },
+                avgItemsPerMinute: { $avg: '$pickerPerformance.itemsPerMinute' },
+                startTime: { $min: '$batchStartTime' },
+                endTime: { $max: '$batchEndTime' }
+            }
+        },
+        {
+            $project: {
+                batchId: '$_id',
+                totalOrders: 1,
+                totalItems: 1,
+                totalQuantity: 1,
+                avgDurationMinutes: { $divide: ['$avgDuration', 60000] },
+                avgItemsPerMinute: { $round: ['$avgItemsPerMinute', 2] },
+                totalDurationMinutes: {
+                    $divide: [{ $subtract: ['$endTime', '$startTime'] }, 60000]
+                },
+                _id: 0
+            }
+        }
+    ]);
+};
+
+OrderSchema.statics.getPickerPerformance = async function(userId, dateRange = {}) {
+    const match = { assignedTo: userId };
+
+    if (dateRange.start) {
+        match.pickingStartTime = { $gte: dateRange.start };
+    }
+    if (dateRange.end) {
+        match.pickingEndTime = { ...match.pickingEndTime, $lte: dateRange.end };
+    }
+
+    return this.aggregate([
+        { $match: match },
+        {
+            $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                totalDuration: { $sum: '$pickingDuration' },
+                avgItemsPerMinute: { $avg: '$pickerPerformance.itemsPerMinute' },
+                totalErrors: {
+                    $sum: { $size: { $ifNull: ['$pickerPerformance.errors', []] } }
+                },
+                batchTypes: {
+                    $push: '$batchType'
+                }
+            }
+        },
+        {
+            $project: {
+                totalOrders: 1,
+                totalHours: { $divide: ['$totalDuration', 3600000] },
+                avgItemsPerMinute: { $round: ['$avgItemsPerMinute', 2] },
+                errorRate: {
+                    $multiply: [
+                        { $divide: ['$totalErrors', '$totalOrders'] },
+                        100
+                    ]
+                },
+                batchTypeDistribution: {
+                    $arrayToObject: {
+                        $map: {
+                            input: { $setUnion: ['$batchTypes'] },
+                            as: 'type',
+                            in: {
+                                k: '$$type',
+                                v: {
+                                    $size: {
+                                        $filter: {
+                                            input: '$batchTypes',
+                                            cond: { $eq: ['$$this', '$$type'] }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]);
+};
+
+// Express-Order Helper
+OrderSchema.statics.getExpressOrders = async function() {
+    const now = new Date();
+    const deadline = new Date();
+    deadline.setHours(14, 0, 0, 0);
+
+    if (deadline < now) {
+        deadline.setDate(deadline.getDate() + 1);
+    }
+
+    return this.find({
+        $or: [
+            { priority: { $in: ['high', 'express'] } },
+            { 'shippingMethod.name': /express/i },
+            { shippingDeadline: { $lte: deadline } }
+        ],
+        status: { $in: ['new', 'in_progress', 'packed'] }
+    }).sort({ shippingDeadline: 1, priority: -1 });
 };
 
 module.exports = Order;
