@@ -2,7 +2,7 @@ const axios = require('axios');
 
 /**
  * No Border API Service
- * Basierend auf der API-Dokumentation: https://api.no-border.eu/apiadmin
+ * Verwendet Basic Authentication für https://api.no-border.eu/
  */
 class NoBorderApiService {
     /**
@@ -15,149 +15,26 @@ class NoBorderApiService {
         this.baseUrl = baseUrl || 'https://api.no-border.eu';
         this.username = username;
         this.password = password;
-        this.authToken = null;
-        this.tokenExpiry = null;
-        this.headers = {
-            'Content-Type': 'application/json'
-        };
-    }
 
-    /**
-     * Authentifiziert sich bei der No Border API
-     * Probiert verschiedene Authentifizierungsmethoden
-     */
-    async authenticate() {
-        try {
-            // Prüfen ob Token noch gültig
-            if (this.authToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
-                return this.authToken;
-            }
-
-            console.log('Authentifiziere bei No Border API...');
-
-            // Methode 1: Standard Login
-            try {
-                const authResponse = await this.tryLogin('/api/auth/login');
-                if (authResponse) return this.processAuthResponse(authResponse);
-            } catch (e1) {
-                console.log('Standard Login fehlgeschlagen:', e1.response?.status);
-            }
-
-            // Methode 2: Alternativer Login-Endpunkt
-            try {
-                const authResponse = await this.tryLogin('/login');
-                if (authResponse) return this.processAuthResponse(authResponse);
-            } catch (e2) {
-                console.log('Alternativer Login fehlgeschlagen:', e2.response?.status);
-            }
-
-            // Methode 3: API-Key Authentifizierung (falls Username eigentlich API-Key ist)
-            try {
-                const authResponse = await this.tryApiKeyAuth();
-                if (authResponse) return this.processAuthResponse(authResponse);
-            } catch (e3) {
-                console.log('API-Key Auth fehlgeschlagen:', e3.response?.status);
-            }
-
-            // Methode 4: Basic Auth Header
-            try {
-                return this.setupBasicAuth();
-            } catch (e4) {
-                console.log('Basic Auth Setup fehlgeschlagen');
-            }
-
-            throw new Error('Alle Authentifizierungsmethoden fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.');
-
-        } catch (error) {
-            console.error('Fehler bei der Authentifizierung:', error);
-            throw new Error(`Authentifizierungsfehler: ${error.message}`);
+        // Basic Auth Header vorbereiten
+        if (this.username && this.password) {
+            const credentials = Buffer.from(`${this.username}:${this.password}`).toString('base64');
+            this.authHeader = `Basic ${credentials}`;
         }
     }
 
     /**
-     * Versucht Login mit verschiedenen Endpunkten
+     * Gibt die Headers mit Basic Authentication zurück
      */
-    async tryLogin(endpoint) {
-        const response = await axios.post(`${this.baseUrl}${endpoint}`, {
-            username: this.username,
-            password: this.password,
-            email: this.username, // Falls Email statt Username verwendet wird
-            user: this.username,
-            login: this.username
-        }, {
-            headers: { 'Content-Type': 'application/json' },
-            timeout: 10000
-        });
-
-        return response;
-    }
-
-    /**
-     * Versucht API-Key basierte Authentifizierung
-     */
-    async tryApiKeyAuth() {
-        // Falls der "Username" eigentlich ein API-Key ist
-        const response = await axios.post(`${this.baseUrl}/api/authenticate`, {
-            apiKey: this.username,
-            api_key: this.username,
-            key: this.username,
-            token: this.username
-        }, {
-            headers: { 'Content-Type': 'application/json' },
-            timeout: 10000
-        });
-
-        return response;
-    }
-
-    /**
-     * Setup für Basic Authentication
-     */
-    setupBasicAuth() {
-        const credentials = Buffer.from(`${this.username}:${this.password}`).toString('base64');
-        this.authToken = `Basic ${credentials}`;
-        this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 Stunden
-        return this.authToken;
-    }
-
-    /**
-     * Verarbeitet die Authentifizierungs-Antwort
-     */
-    processAuthResponse(authResponse) {
-        const data = authResponse.data;
-
-        // Verschiedene Token-Formate unterstützen
-        this.authToken = data.token ||
-            data.access_token ||
-            data.accessToken ||
-            data.auth_token ||
-            data.authToken ||
-            data.jwt;
-
-        if (!this.authToken) {
-            throw new Error('Kein Token in der Authentifizierungs-Antwort gefunden');
+    getAuthHeaders() {
+        if (!this.authHeader) {
+            throw new Error('Keine Authentifizierungsdaten konfiguriert');
         }
-
-        // Token-Gültigkeit setzen
-        const expiresIn = data.expires_in || data.expiresIn || 3600;
-        this.tokenExpiry = new Date(Date.now() + (expiresIn * 1000));
-
-        console.log(`Authentifizierung erfolgreich. Token gültig bis: ${this.tokenExpiry.toISOString()}`);
-        return this.authToken;
-    }
-
-    /**
-     * Gibt die Headers mit aktueller Authentifizierung zurück
-     */
-    async getAuthHeaders() {
-        const token = await this.authenticate();
-
-        // Verschiedene Authorization-Header-Formate
-        const authHeader = token.startsWith('Basic ') ? token : `Bearer ${token}`;
 
         return {
             'Content-Type': 'application/json',
-            'Authorization': authHeader
+            'Accept': 'application/json',
+            'Authorization': this.authHeader
         };
     }
 
@@ -166,10 +43,12 @@ class NoBorderApiService {
      */
     async testConnection() {
         try {
-            // Teste Authentifizierung
-            await this.authenticate();
+            console.log('Teste No Border API Verbindung...');
+            console.log(`Base URL: ${this.baseUrl}`);
+            console.log(`Username: ${this.username}`);
 
-            console.log('✅ Authentifizierung erfolgreich');
+            // Teste mit einem einfachen Request
+            const result = await this.getOpenDeliveryNotes(1, 1);
 
             return {
                 success: true,
@@ -178,21 +57,36 @@ class NoBorderApiService {
                     message: 'Verbindung erfolgreich hergestellt',
                     service: 'No Border API',
                     timestamp: new Date().toISOString(),
-                    tokenExpiry: this.tokenExpiry?.toISOString(),
                     baseUrl: this.baseUrl,
-                    username: this.username
+                    username: this.username,
+                    testResult: `${result.data.length} Sales Orders gefunden (Test mit Limit 1)`
                 }
             };
         } catch (error) {
             console.error('❌ Verbindungstest fehlgeschlagen:', error);
+
+            let errorMessage = error.message;
+            let suggestion = 'Überprüfen Sie Ihre Anmeldedaten und die API-Dokumentation';
+
+            if (error.response) {
+                errorMessage = `HTTP ${error.response.status}: ${error.response.statusText}`;
+
+                if (error.response.status === 401) {
+                    suggestion = 'Authentifizierung fehlgeschlagen. Überprüfen Sie Username und Passwort in der .env Datei';
+                } else if (error.response.status === 404) {
+                    suggestion = 'API-Endpunkt nicht gefunden. Überprüfen Sie die Base URL';
+                }
+            }
+
             return {
                 success: false,
                 status: 'Fehler',
-                error: error.message,
+                error: errorMessage,
                 data: {
                     baseUrl: this.baseUrl,
                     username: this.username,
-                    suggestion: 'Überprüfen Sie Ihre Anmeldedaten und die API-Dokumentation unter https://api.no-border.eu/apiadmin'
+                    suggestion: suggestion,
+                    responseData: error.response?.data
                 }
             };
         }
@@ -200,7 +94,7 @@ class NoBorderApiService {
 
     /**
      * Ruft alle Sales Orders mit spezifischen Filtern ab
-     * Verwendet den korrekten Endpunkt aus der API-Dokumentation
+     * Verwendet den korrekten Endpunkt: /sales-orders/search
      */
     async getOpenDeliveryNotes(page = 1, limit = 50) {
         try {
@@ -209,7 +103,7 @@ class NoBorderApiService {
                     {
                         key: "status",
                         op: "in",
-                        value: ["in fulfillment"]
+                        value: ["inFulfillment"] // Korrekter Status-Name
                     }
                 ],
                 limit: limit,
@@ -224,47 +118,17 @@ class NoBorderApiService {
 
             console.log('🔍 No Border API Request:', JSON.stringify(requestBody, null, 2));
 
-            const headers = await this.getAuthHeaders();
+            const headers = this.getAuthHeaders();
+            const endpoint = `${this.baseUrl}/sales-orders/search`; // Korrekter Endpunkt
 
-            // Verschiedene mögliche Endpunkte für Sales Orders
-            const endpoints = [
-                '/api/sales-orders/getAll',
-                '/api/salesorders/getAll',
-                '/api/orders/getAll',
-                '/salesorders/getAll',
-                '/orders/getAll'
-            ];
+            console.log(`📡 Request an: ${endpoint}`);
 
-            let response = null;
-            let lastError = null;
+            const response = await axios.post(endpoint, requestBody, {
+                headers,
+                timeout: 30000
+            });
 
-            for (const endpoint of endpoints) {
-                try {
-                    console.log(`📡 Versuche Endpunkt: ${this.baseUrl}${endpoint}`);
-                    response = await axios.post(`${this.baseUrl}${endpoint}`, requestBody, {
-                        headers,
-                        timeout: 30000
-                    });
-                    console.log(`✅ Erfolgreicher Endpunkt: ${endpoint}`);
-                    break;
-                } catch (error) {
-                    lastError = error;
-                    console.log(`❌ Endpunkt ${endpoint} fehlgeschlagen: ${error.response?.status}`);
-
-                    // Bei 401 Token zurücksetzen
-                    if (error.response?.status === 401) {
-                        this.authToken = null;
-                        this.tokenExpiry = null;
-                    }
-                    continue;
-                }
-            }
-
-            if (!response) {
-                throw lastError || new Error('Alle Sales Orders Endpunkte fehlgeschlagen');
-            }
-
-            console.log(`📊 No Border API Response: ${response.data.data?.length || 0} Lieferscheine gefunden`);
+            console.log(`📊 No Border API Response: ${response.data.data?.length || 0} Sales Orders gefunden`);
 
             return {
                 success: true,
@@ -277,7 +141,13 @@ class NoBorderApiService {
                 }
             };
         } catch (error) {
-            console.error('❌ Fehler beim Abrufen der Lieferscheine:', error);
+            console.error('❌ Fehler beim Abrufen der Sales Orders:', error);
+
+            if (error.response) {
+                console.error('Response Status:', error.response.status);
+                console.error('Response Data:', error.response.data);
+            }
+
             throw new Error(`No Border API Fehler: ${error.message}`);
         }
     }
@@ -287,34 +157,15 @@ class NoBorderApiService {
      */
     async getDeliveryNoteDetails(salesOrderId) {
         try {
-            const headers = await this.getAuthHeaders();
+            const headers = this.getAuthHeaders();
+            const endpoint = `${this.baseUrl}/sales-orders/${salesOrderId}`;
 
-            // Verschiedene Detail-Endpunkte versuchen
-            const endpoints = [
-                `/api/sales-orders/${salesOrderId}`,
-                `/api/salesorders/${salesOrderId}`,
-                `/api/orders/${salesOrderId}`,
-                `/salesorders/${salesOrderId}`,
-                `/orders/${salesOrderId}`
-            ];
+            const response = await axios.get(endpoint, {
+                headers,
+                timeout: 10000
+            });
 
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await axios.get(`${this.baseUrl}${endpoint}`, {
-                        headers,
-                        timeout: 10000
-                    });
-                    return response.data;
-                } catch (error) {
-                    if (error.response?.status === 401) {
-                        this.authToken = null;
-                        this.tokenExpiry = null;
-                    }
-                    continue;
-                }
-            }
-
-            throw new Error(`Kein funktionierender Detail-Endpunkt für ID ${salesOrderId} gefunden`);
+            return response.data;
         } catch (error) {
             console.error(`Fehler beim Abrufen der Details für ${salesOrderId}:`, error);
             throw new Error(`Fehler beim Abrufen der Details: ${error.message}`);
@@ -322,7 +173,7 @@ class NoBorderApiService {
     }
 
     /**
-     * Sucht einen Sales Order nach Nummer
+     * Sucht einen Sales Order nach Delivery Note Number
      */
     async findDeliveryNoteByNumber(deliveryNoteNumber) {
         try {
@@ -338,8 +189,8 @@ class NoBorderApiService {
                 page: 1
             };
 
-            const headers = await this.getAuthHeaders();
-            const response = await axios.post(`${this.baseUrl}/api/sales-orders/getAll`, requestBody, {
+            const headers = this.getAuthHeaders();
+            const response = await axios.post(`${this.baseUrl}/sales-orders/search`, requestBody, {
                 headers,
                 timeout: 10000
             });
@@ -347,13 +198,7 @@ class NoBorderApiService {
             const orders = response.data.data || [];
             return orders.length > 0 ? orders[0] : null;
         } catch (error) {
-            console.error(`Fehler beim Suchen des Lieferscheins ${deliveryNoteNumber}:`, error);
-
-            if (error.response?.status === 401) {
-                this.authToken = null;
-                this.tokenExpiry = null;
-            }
-
+            console.error(`Fehler beim Suchen des Sales Orders ${deliveryNoteNumber}:`, error);
             throw new Error(`Fehler bei der Suche: ${error.message}`);
         }
     }
@@ -364,9 +209,9 @@ class NoBorderApiService {
     async updateDeliveryNoteStatus(salesOrderId, status) {
         try {
             const requestBody = { status: status };
-            const headers = await this.getAuthHeaders();
+            const headers = this.getAuthHeaders();
 
-            const response = await axios.put(`${this.baseUrl}/api/sales-orders/${salesOrderId}`, requestBody, {
+            const response = await axios.put(`${this.baseUrl}/sales-orders/${salesOrderId}`, requestBody, {
                 headers,
                 timeout: 10000
             });
@@ -374,12 +219,6 @@ class NoBorderApiService {
             return response.data;
         } catch (error) {
             console.error(`Fehler beim Status-Update für ${salesOrderId}:`, error);
-
-            if (error.response?.status === 401) {
-                this.authToken = null;
-                this.tokenExpiry = null;
-            }
-
             throw new Error(`Fehler beim Status-Update: ${error.message}`);
         }
     }
@@ -413,7 +252,7 @@ class NoBorderApiService {
                 phone: noBorderOrder.customer?.phone || ''
             },
 
-            // Lieferscheinpositionen
+            // Sales Order Positionen
             items: (noBorderOrder.items || []).map((item, index) => ({
                 id: item.id || `item_${index}`,
                 productId: item.productId || item.sku,
@@ -446,7 +285,7 @@ class NoBorderApiService {
      */
     mapNoBorderToInternalStatus(noBorderStatus) {
         const statusMap = {
-            'in fulfillment': 'new',
+            'inFulfillment': 'new',
             'processing': 'in_progress',
             'packed': 'packed',
             'shipped': 'shipped',
@@ -460,7 +299,7 @@ class NoBorderApiService {
 
     mapInternalToNoBorderStatus(internalStatus) {
         const statusMap = {
-            'new': 'in fulfillment',
+            'new': 'inFulfillment',
             'in_progress': 'processing',
             'packed': 'packed',
             'shipped': 'shipped',
@@ -468,7 +307,7 @@ class NoBorderApiService {
             'cancelled': 'cancelled'
         };
 
-        return statusMap[internalStatus] || 'in fulfillment';
+        return statusMap[internalStatus] || 'inFulfillment';
     }
 }
 
