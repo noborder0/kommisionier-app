@@ -65,6 +65,56 @@
         <div class="card-body">
             <h4 class="mb-4">Willkommen, <%= user.name %>!</h4>
 
+            <!-- Sync-Status Anzeige -->
+            <% if (typeof syncStats !== 'undefined' && syncStats) { %>
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-sync"></i> No Border Synchronisierung
+                                    <% if (syncStats.isRunning) { %>
+                                        <span class="badge bg-success ms-2">Aktiv</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary ms-2">Inaktiv</span>
+                                    <% } %>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Letzte Synchronisierung:</strong><br>
+                                        <% if (syncStats.lastSyncTime) { %>
+                                            <%= new Date(syncStats.lastSyncTime).toLocaleString('de-DE') %>
+                                        <% } else { %>
+                                            Noch keine
+                                        <% } %>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Erfolgreiche Syncs:</strong><br>
+                                        <span class="text-success"><%= syncStats.successfulSyncs %></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Fehlgeschlagene Syncs:</strong><br>
+                                        <span class="text-danger"><%= syncStats.failedSyncs %></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="btn btn-sm btn-primary" onclick="triggerManualSync()">
+                                            <i class="fas fa-sync"></i> Manuell synchronisieren
+                                        </button>
+                                    </div>
+                                </div>
+                                <% if (syncStats.lastError) { %>
+                                    <div class="alert alert-warning mt-2 mb-0">
+                                        <small><strong>Letzter Fehler:</strong> <%= syncStats.lastError %></small>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
@@ -113,6 +163,30 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-plug"></i> API-Verbindung
+                            </h5>
+                            <p class="card-text">Testen Sie die Verbindung zur No Border API.</p>
+                            <a href="/orders/api-test" class="btn btn-primary">API testen</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-sync"></i> Synchronisierung
+                            </h5>
+                            <p class="card-text">Synchronisieren Sie alle offenen Lieferscheine mit No Border.</p>
+                            <a href="/orders/sync" class="btn btn-primary">Jetzt synchronisieren</a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <% if (user.role === 'admin') { %>
@@ -150,5 +224,29 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    async function triggerManualSync() {
+        try {
+            const response = await fetch('/api/trigger-sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Synchronisierung gestartet!');
+                location.reload(); // Seite neu laden um aktualisierte Stats zu zeigen
+            } else {
+                alert('Fehler beim Starten der Synchronisierung: ' + result.error);
+            }
+        } catch (error) {
+            alert('Fehler: ' + error.message);
+        }
+    }
+</script>
 </body>
 </html>

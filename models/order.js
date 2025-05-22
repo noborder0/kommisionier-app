@@ -1,18 +1,18 @@
 const mongoose = require('mongoose');
 
-// Basierend auf der Xentral DeliveryNoteView-Dokumentation und den Testdaten
+// Basierend auf der No Border API-Struktur
 const OrderSchema = new mongoose.Schema({
     // Kerninformationen zur Identifikation
     id: {
         type: String,
-        required: false  // Nicht erforderlich, falls automatisch generiert
+        required: false  // No Border ID
     },
     number: {
         type: String,
-        required: false,  // Nicht erforderlich, falls automatisch generiert
+        required: false,
         unique: true
     },
-    xentralId: String,
+    noBorderId: String, // No Border API ID
     deliveryNoteNumber: {
         type: String,
         required: true,
@@ -36,33 +36,24 @@ const OrderSchema = new mongoose.Schema({
     // Statusfelder
     status: {
         type: String,
-        enum: ['new', 'in_progress', 'packed', 'shipped', 'completed', 'released', 'sent'],
+        enum: ['new', 'in_progress', 'packed', 'shipped', 'completed', 'cancelled'],
         default: 'new'
     },
     shippingStatus: String,
     type: String,
 
-    // Kundendaten (basierend auf "receiver" in den Testdaten)
-    receiver: {
+    // Kundendaten (aus No Border API)
+    customer: {
         id: String,
         name: String,
-        number: String,
+        name2: String,
         department: String,
         street: String,
         zip: String,
         city: String,
+        country: String,
         email: String,
         phone: String
-    },
-
-    // Länderdaten
-    country: String,
-    countryIso: String,
-
-    // Projektinformationen
-    project: {
-        id: String,
-        name: String
     },
 
     // Versandinformationen
@@ -71,13 +62,14 @@ const OrderSchema = new mongoose.Schema({
         name: String
     },
 
-    // Detaillierte Versandinformationen (aus dem ursprünglichen Schema)
+    // Detaillierte Versandinformationen
     shipping: {
         carrier: String,
         trackingNumber: String,
         trackingUrl: String,
         weight: Number,
-        cost: Number
+        cost: Number,
+        method: String
     },
 
     // Verbundener Auftrag
@@ -88,10 +80,12 @@ const OrderSchema = new mongoose.Schema({
 
     // Auftragspositionen/Lieferscheinpositionen
     items: [{
-        // API-Felder aus Xentral
-        id: String,              // Positions-ID in Xentral
-        articleId: String,       // Artikel-ID
-        articleNumber: String,   // Artikelnummer
+        // API-Felder aus No Border
+        id: String,              // Positions-ID in No Border
+        productId: String,       // Produkt-ID
+        sku: String,             // SKU/Artikelnummer
+        productCode: String,     // Produktcode
+        productName: String,     // Produktname
         name: String,            // Artikelname/Beschreibung
         description: String,     // Zusätzliche Beschreibung
         quantity: Number,        // Menge
@@ -197,8 +191,7 @@ Order.createMinimalOrder = function(deliveryNoteNumber) {
     });
 };
 
-// Hilfsfunktion zum Mappen von API-Positionen zu Schema-Positionen
-// Basierend auf der DeliveryNoteView API von Xentral
+// Hilfsfunktion zum Mappen von No Border API-Positionen zu Schema-Positionen
 Order.mapApiPositionsToSchema = function(apiPositions) {
     if (!apiPositions || !Array.isArray(apiPositions)) {
         return [];
@@ -207,9 +200,11 @@ Order.mapApiPositionsToSchema = function(apiPositions) {
     return apiPositions.map(pos => {
         return {
             id: pos.id,
-            articleId: pos.articleId,
-            articleNumber: pos.articleNumber,
-            name: pos.name || pos.title,
+            productId: pos.productId,
+            sku: pos.sku || pos.productCode,
+            productCode: pos.productCode,
+            productName: pos.productName,
+            name: pos.name || pos.productName,
             description: pos.description,
             quantity: pos.quantity || pos.amount,
             unit: pos.unit,

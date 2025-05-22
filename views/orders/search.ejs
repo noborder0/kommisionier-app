@@ -124,59 +124,34 @@
 
     <div class="card mt-4">
         <div class="card-header bg-light">
-            <h4 class="mb-0">Synchronisierung mit Xentral</h4>
+            <h4 class="mb-0">Synchronisierung mit No Border</h4>
         </div>
         <div class="card-body">
             <p class="card-text">
                 <i class="fas fa-info-circle text-primary"></i>
-                Drücken Sie auf "Mit Xentral synchronisieren", um Lieferscheine aus Ihrem Xentral-System zu importieren.
-                Bei einer großen Datenmenge können Sie die Synchronisierung einschränken.
+                Drücken Sie auf "Mit No Border synchronisieren", um Lieferscheine aus Ihrem No Border-System zu importieren.
             </p>
 
-            <form action="/orders/sync" method="GET" class="mb-4">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="max" class="form-label">Max. Anzahl:</label>
-                            <select class="form-select" id="max" name="max">
-                                <option value="50">50 Lieferscheine</option>
-                                <option value="100" selected>100 Lieferscheine</option>
-                                <option value="200">200 Lieferscheine</option>
-                                <option value="500">500 Lieferscheine</option>
-                                <option value="1000">1.000 Lieferscheine</option>
-                            </select>
-                            <small class="form-text text-muted">Begrenze die Anzahl der zu synchronisierenden Lieferscheine.</small>
-                        </div>
-                    </div>
+            <div class="d-flex gap-2 mb-4">
+                <a href="/orders/sync" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Mit No Border synchronisieren
+                </a>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="fromDate" class="form-label">Datum ab:</label>
-                            <input type="date" class="form-control" id="fromDate" name="fromDate">
-                            <small class="form-text text-muted">Nur Lieferscheine ab diesem Datum synchronisieren (Format: YYYY-MM-DD).</small>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100 py-2">
-                            <i class="fas fa-sync"></i> Mit Xentral synchronisieren
-                        </button>
-                    </div>
-                </div>
-            </form>
-
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> <strong>Info zur API-Filterung:</strong>
-                Die Xentral-API filtert nach dem Dokumentendatum (documentDate) mit dem Operator "greaterThan".
-                Standardmäßig werden Lieferscheine ab dem 1. Januar 2024 geladen. Die API-Anfragen verwenden eine
-                Seitengröße von 50 Ergebnissen pro Seite (maximaler Wert laut API).
+                <a href="/orders/api-test" class="btn btn-outline-info">
+                    <i class="fas fa-plug"></i> API-Verbindung testen
+                </a>
             </div>
 
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> <strong>Hinweis:</strong>
-                Die Synchronisierung großer Datenmengen kann einige Zeit in Anspruch nehmen.
-                Bei über 1.000 Lieferscheinen empfehlen wir die Verwendung der Filter, um die Belastung
-                des Systems zu reduzieren.
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> <strong>Info zur Synchronisierung:</strong>
+                Das System holt automatisch alle offenen Lieferscheine (Status: "in fulfillment") aus der No Border API
+                und aktualisiert die lokale Datenbank entsprechend.
+            </div>
+
+            <div class="alert alert-success">
+                <i class="fas fa-clock"></i> <strong>Automatische Synchronisierung:</strong>
+                Die Synchronisierung läuft automatisch alle 1 Minute im Hintergrund.
+                Neue Lieferscheine werden automatisch importiert.
             </div>
         </div>
     </div>
@@ -213,12 +188,6 @@
                 this.form.submit();
             }
         });
-
-        // Standard-Datum setzen (1. Januar 2024)
-        const fromDateInput = document.getElementById('fromDate');
-        if (fromDateInput) {
-            fromDateInput.value = '2024-01-01';
-        }
     });
 </script>
 </body>

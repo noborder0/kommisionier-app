@@ -1,4 +1,4 @@
-onst Order = require('../models/order');
+const Order = require('../models/order');
 
 /**
  * Order Controller
